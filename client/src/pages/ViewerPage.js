@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { useAuth } from '../contexts/AuthContext';
+import '@babylonjs/viewer';
 
 function ViewerPage() {
   const { id } = useParams();
   const location = useLocation();
-  const containerRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const viewerRef = useRef(null);
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,112 +32,6 @@ function ViewerPage() {
     }
   }, [id]);
 
-  const initViewer = useCallback(() => {
-    if (!containerRef.current || !submission) return;
-
-    const container = containerRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    // 创建场景 - 简单的深色背景
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222);
-
-    // 创建相机
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      width / height,
-      0.1,
-      1000
-    );
-    camera.position.z = 5;
-
-    // 创建渲染器 - 简化配置提升性能
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    container.appendChild(renderer.domElement);
-
-    // 添加轨道控制器
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // 简单的灯光系统
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(5, 5, 5);
-    scene.add(directionalLight);
-
-    // 加载STL模型
-    const loader = new STLLoader();
-    loader.load(
-      submission.filePath,
-      (geometry) => {
-        // 使用简单的Phong材质
-        const material = new THREE.MeshPhongMaterial({
-          color: 0x87ceeb,
-          side: THREE.DoubleSide
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-
-        // 居中模型
-        geometry.center();
-
-        // 自动缩放以适应视图
-        const box = new THREE.Box3().setFromObject(mesh);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 3.5 / maxDim;
-        mesh.scale.set(scale, scale, scale);
-
-        scene.add(mesh);
-
-        // 设置相机位置
-        camera.position.set(5, 3, 5);
-        camera.lookAt(0, 0, 0);
-        controls.update();
-      },
-      (xhr) => {
-        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
-      },
-      (error) => {
-        console.error('加载STL模型失败:', error);
-        setError('加载3D模型失败');
-      }
-    );
-
-    // 动画循环
-    const animate = () => {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // 处理窗口大小变化
-    const handleResize = () => {
-      if (!containerRef.current) return;
-      const newWidth = containerRef.current.clientWidth;
-      const newHeight = containerRef.current.clientHeight;
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // 清理函数
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      renderer.dispose();
-      controls.dispose();
-    };
-  }, [submission]);
-
   useEffect(() => {
     fetchSubmission();
   }, [fetchSubmission]);
@@ -150,19 +44,6 @@ function ViewerPage() {
     }
     return '/student-view';
   };
-
-  useEffect(() => {
-    if (submission && containerRef.current) {
-      const cleanup = initViewer();
-      return () => {
-        if (cleanup) cleanup();
-        // 清理资源
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
-        }
-      };
-    }
-  }, [submission, initViewer]);
 
   if (loading) {
     return (
@@ -210,16 +91,28 @@ function ViewerPage() {
         <div className="col-lg-8">
           <div className="card">
             <div className="card-body p-0">
-              <div ref={containerRef} id="stl-viewer"></div>
+              {/* Babylon Viewer */}
+              <div style={{ height: '600px', width: '100%' }}>
+                <babylon-viewer
+                  ref={viewerRef}
+                  source={submission.filePath}
+                  style={{ width: '100%', height: '100%' }}
+                ></babylon-viewer>
+              </div>
             </div>
           </div>
+
+          {/* 操作说明 */}
           <div className="card mt-3">
             <div className="card-body">
               <h5 className="card-title">🎮 操作说明</h5>
               <ul className="mb-0">
                 <li>鼠标左键拖拽：旋转模型</li>
-                <li>鼠标右键拖拽：平移模型</li>
                 <li>鼠标滚轮：缩放模型</li>
+                <li>鼠标右键拖拽：平移模型</li>
+                <li>使用工具栏切换视图模式</li>
+                <li>支持全屏查看</li>
+                <li>自动适应模型大小</li>
               </ul>
             </div>
           </div>
@@ -276,13 +169,24 @@ function ViewerPage() {
 
           <div className="card mt-3">
             <div className="card-body">
-              <a
-                href={submission.filePath}
-                download={submission.filename}
-                className="btn btn-success w-100"
-              >
-                📥 下载STL文件
-              </a>
+              {isAuthenticated ? (
+                <a
+                  href={submission.filePath}
+                  download={submission.filename}
+                  className="btn btn-success w-100"
+                >
+                  📥 下载STL文件
+                </a>
+              ) : (
+                <div>
+                  <div className="alert alert-info mb-0 text-center">
+                    <small>
+                      👁️ 3D模型已在线预览<br />
+                      <span className="text-muted">登录教师账号以下载文件</span>
+                    </small>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

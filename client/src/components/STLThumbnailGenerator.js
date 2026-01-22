@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as THREE from 'three';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight, Vector3, Color3, Color4, StandardMaterial, SceneLoader } from '@babylonjs/core';
+import '@babylonjs/materials';
 
 function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
   const canvasRef = useRef(null);
@@ -10,92 +10,121 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
     setStatus('generating');
 
     const canvas = canvasRef.current;
-    const width = 800;
-    const height = 500;
 
-    // 创建场景
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f0f0);
-
-    // 创建相机
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.z = 5;
-
-    // 创建渲染器
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
+    // 创建Babylon.js引擎
+    const engine = new Engine(canvas, true, {
       antialias: true,
       preserveDrawingBuffer: true
     });
-    renderer.setSize(width, height);
 
-    // 添加灯光
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+    // 创建场景
+    const scene = new Scene(engine);
+    scene.clearColor = new Color4(0.95, 0.95, 0.95, 1);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
+    // 创建相机
+    const camera = new ArcRotateCamera(
+      'camera',
+      Math.PI / 4,
+      Math.PI / 3,
+      10,
+      Vector3.Zero(),
+      scene
+    );
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight2.position.set(-1, -1, -1);
-    scene.add(directionalLight2);
+    // 添加环境光
+    const ambientLight = new HemisphericLight(
+      'ambientLight',
+      new Vector3(0, 1, 0),
+      scene
+    );
+    ambientLight.intensity = 0.5;
+    ambientLight.diffuse = new Color3(1, 1, 1);
+    ambientLight.groundColor = new Color3(0.2, 0.2, 0.2);
+
+    // 添加主光源
+    const mainLight = new DirectionalLight(
+      'mainLight',
+      new Vector3(-1, -1, -1),
+      scene
+    );
+    mainLight.intensity = 0.8;
+    mainLight.diffuse = new Color3(1, 1, 1);
+    mainLight.specular = new Color3(1, 1, 1);
+
+    // 添加辅助光源
+    const fillLight = new DirectionalLight(
+      'fillLight',
+      new Vector3(0.5, -0.5, 0.5),
+      scene
+    );
+    fillLight.intensity = 0.5;
+    fillLight.diffuse = new Color3(1, 1, 1);
+
+    // 创建临时URL来加载文件
+    const fileUrl = URL.createObjectURL(stlFile);
 
     // 加载STL模型
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const loader = new STLLoader();
-      const geometry = loader.parse(e.target.result);
+    SceneLoader.ImportMesh(
+      '',
+      '',
+      fileUrl,
+      scene,
+      (meshes) => {
+        if (meshes.length > 0) {
+          const modelMesh = meshes[0];
 
-      const material = new THREE.MeshPhongMaterial({
-        color: 0x00ff00,
-        specular: 0x111111,
-        shininess: 200,
-        side: THREE.DoubleSide
-      });
-      const mesh = new THREE.Mesh(geometry, material);
+          // 创建材质
+          const material = new StandardMaterial('modelMaterial', scene);
+          material.diffuseColor = new Color3(0, 1, 0);
+          material.specularColor = new Color3(0.07, 0.07, 0.07);
+          material.specularPower = 200;
+          modelMesh.material = material;
 
-      // 居中模型
-      geometry.center();
+          // 计算边界框
+          const boundingInfo = modelMesh.getBoundingInfo();
+          const size = boundingInfo.maximum.subtract(boundingInfo.minimum);
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const center = boundingInfo.minimum.add(size.scale(0.5));
 
-      // 自动缩放以充满视口
-      const box = new THREE.Box3().setFromObject(mesh);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
-      
-      // 根据相机FOV和距离计算合适的缩放比例
-      const fov = camera.fov * (Math.PI / 180);
-      const cameraDistance = 8;
-      const visibleHeight = 2 * Math.tan(fov / 2) * cameraDistance;
-      const visibleWidth = visibleHeight * (width / height);
-      const minVisibleDim = Math.min(visibleWidth, visibleHeight);
-      const scale = (minVisibleDim * 0.85) / maxDim;
-      mesh.scale.set(scale, scale, scale);
+          // 缩放和居中模型
+          const scale = 5 / maxDim;
+          modelMesh.scaling = new Vector3(scale, scale, scale);
+          modelMesh.position = center.scale(-scale);
 
-      scene.add(mesh);
+          // 调整相机
+          camera.setTarget(Vector3.Zero());
+          camera.radius = maxDim * 1.5;
 
-      // 设置相机位置 - 斜45度看侧面
-      camera.position.set(6, 3, 6);
-      camera.lookAt(0, 0, 0);
+          // 渲染一帧
+          scene.render();
 
-      // 渲染
-      renderer.render(scene, camera);
-
-      // 生成缩略图
-      setTimeout(() => {
-        // 将canvas转换为Blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const thumbnailFile = new File([blob], 'thumbnail.png', { type: 'image/png' });
-            onThumbnailGenerated(thumbnailFile);
-          }
-          setStatus('completed');
-        }, 'image/png');
-      }, 100);
-    };
-
-    reader.readAsArrayBuffer(stlFile);
+          // 生成缩略图
+          setTimeout(() => {
+            // 将canvas转换为Blob
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const thumbnailFile = new File([blob], 'thumbnail.png', { type: 'image/png' });
+                onThumbnailGenerated(thumbnailFile);
+              }
+              setStatus('completed');
+              
+              // 清理
+              URL.revokeObjectURL(fileUrl);
+              engine.dispose();
+            }, 'image/png');
+          }, 100);
+        }
+      },
+      (progress) => {
+        console.log(`加载进度: ${Math.round((progress.loaded / progress.total) * 100)}%`);
+      },
+      (error) => {
+        console.error('加载STL模型失败:', error);
+        setStatus('error');
+        URL.revokeObjectURL(fileUrl);
+        engine.dispose();
+      }
+    );
   }, [onThumbnailGenerated, stlFile]);
 
   useEffect(() => {
