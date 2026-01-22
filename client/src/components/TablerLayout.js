@@ -16,7 +16,7 @@ const TablerLayout = ({ children }) => {
     },
     {
       title: '作品提交',
-      path: '/student',
+      path: '/submit',
       icon: 'upload'
     },
     {
@@ -178,7 +178,7 @@ const TablerLayout = ({ children }) => {
                 <h2 className="page-title" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 500, fontSize: '1.5rem'}}>3D建模课程管理</h2>
                 <div className="page-pretitle" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 400, fontSize: '0.9rem', opacity: 0.8}}>
                   {location.pathname === '/' && '首页'}
-                  {location.pathname === '/student' && '作品提交'}
+                  {location.pathname === '/submit' && '作品提交'}
                   {location.pathname === '/student-view' && '查看作品'}
                   {location.pathname === '/works' && '作品管理'}
                   {location.pathname === '/student-management' && '学生管理'}

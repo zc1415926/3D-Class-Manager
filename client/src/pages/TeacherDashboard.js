@@ -66,7 +66,7 @@ function TeacherDashboard() {
                     </button>
                     <button
                       className="btn btn-outline-secondary text-start"
-                      onClick={() => navigate('/student')}
+                      onClick={() => navigate('/submit')}
                     >
                       📤 前往作品提交页面
                     </button>

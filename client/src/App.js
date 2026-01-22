@@ -19,7 +19,7 @@ function AppContent() {
     <TablerLayout>
       <Routes>
         <Route path="/" element={<StudentPage />} />
-        <Route path="/student" element={<StudentPage />} />
+        <Route path="/submit" element={<StudentPage />} />
         <Route path="/works" element={<TeacherPage />} />
         <Route path="/student-management" element={<StudentManagementPage />} />
         <Route path="/student-view" element={<StudentViewPage />} />
