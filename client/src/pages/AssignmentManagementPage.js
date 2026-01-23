@@ -183,6 +183,12 @@ function AssignmentManagementPage() {
                       <td>
                         <div className="btn-list flex-nowrap">
                           <Link 
+                            to={`/assignments/${assignment.id}`}
+                            className="btn btn-sm btn-outline-secondary"
+                          >
+                            查看
+                          </Link>
+                          <Link 
                             to={`/assignments/${assignment.id}/edit`} 
                             className="btn btn-sm btn-outline-primary"
                           >

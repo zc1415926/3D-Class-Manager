@@ -71,21 +71,25 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
     fillLight.intensity = 0.5;
     fillLight.diffuse = new Color3(1, 1, 1);
 
-    // 创建 blob URL，确保文件名包含 .stl 扩展名
-    const fileName = stlFile.name.endsWith('.stl') ? stlFile.name : `${stlFile.name}.stl`;
-    const fileBlob = new File([stlFile], fileName, { type: 'model/stl' });
-    const fileUrl = URL.createObjectURL(fileBlob);
+    // 获取文件扩展名
+    const fileExtension = stlFile.name.split('.').pop().toLowerCase();
+    
+    // 创建 blob URL
+    const fileUrl = URL.createObjectURL(stlFile);
 
-    console.log('开始加载STL文件:', fileName, 'URL:', fileUrl, '文件大小:', stlFile.size);
+    console.log('开始加载3D模型:', stlFile.name, '类型:', fileExtension, 'URL:', fileUrl, '文件大小:', stlFile.size);
 
-    // 使用 ImportMesh 加载 STL 模型
+    // 根据文件类型确定加载器扩展名
+    const loaderExtension = fileExtension === 'obj' ? '.obj' : '.stl';
+
+    // 使用 ImportMesh 加载模型，明确指定加载器扩展名
     SceneLoader.ImportMesh(
       null,                    // meshNames
       fileUrl,                 // rootUrl
       '',                      // sceneFilename
       scene,                   // scene
       (meshes, particleSystems, skeletons) => {
-        console.log('STL模型加载成功，网格数量:', meshes.length);
+        console.log('3D模型加载成功，网格数量:', meshes.length);
         console.log('所有网格信息:', meshes.map(m => ({
           name: m.name,
           vertices: m.totalVertices,
@@ -115,13 +119,13 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
           });
 
           // 计算所有模型的边界框
-          let minBBox = modelMeshes[0].getBoundingInfo().minimum;
-          let maxBBox = modelMeshes[0].getBoundingInfo().maximum;
+          let minBBox = modelMeshes[0].getBoundingInfo().minimum.clone();
+          let maxBBox = modelMeshes[0].getBoundingInfo().maximum.clone();
           
           for (let i = 1; i < modelMeshes.length; i++) {
             const bbox = modelMeshes[i].getBoundingInfo();
-            minBBox = Vector3.Min(minBBox, bbox.minimum);
-            maxBBox = Vector3.Max(maxBBox, bbox.maximum);
+            minBBox = Vector3.Minimize(minBBox, bbox.minimum);
+            maxBBox = Vector3.Maximize(maxBBox, bbox.maximum);
           }
           
           const size = maxBBox.subtract(minBBox);
@@ -130,24 +134,33 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
           
           console.log('模型尺寸:', size, '最大维度:', maxDim, '中心点:', center);
 
-          // 缩放和旋转模型
-          const scale = 8 / maxDim; // 放大一倍，原来是 4 / maxDim
+          // 根据文件类型应用不同的变换
+          const isObjFile = fileExtension === 'obj';
+          const scale = 8 / maxDim;
+          
           modelMeshes.forEach((mesh, index) => {
             mesh.scaling = new Vector3(scale, scale, scale);
-            // 绕Y轴旋转180度
-            mesh.rotation.y = Math.PI;
+            
+            if (isObjFile) {
+              // OBJ模型通常使用右手坐标系，可能需要不同的旋转
+              // 根据实际情况调整，暂时不旋转
+              mesh.rotation.y = 0;
+            } else {
+              // STL模型绕Y轴旋转180度
+              mesh.rotation.y = Math.PI;
+            }
             // 强制更新世界矩阵，确保旋转生效
             mesh.computeWorldMatrix(true);
           });
           
           // 旋转后重新计算边界框并居中
-          let minBBoxAfter = modelMeshes[0].getBoundingInfo().boundingBox.minimumWorld;
-          let maxBBoxAfter = modelMeshes[0].getBoundingInfo().boundingBox.maximumWorld;
+          let minBBoxAfter = modelMeshes[0].getBoundingInfo().boundingBox.minimumWorld.clone();
+          let maxBBoxAfter = modelMeshes[0].getBoundingInfo().boundingBox.maximumWorld.clone();
           
           for (let i = 1; i < modelMeshes.length; i++) {
             const bbox = modelMeshes[i].getBoundingInfo();
-            minBBoxAfter = Vector3.Min(minBBoxAfter, bbox.boundingBox.minimumWorld);
-            maxBBoxAfter = Vector3.Max(maxBBoxAfter, bbox.boundingBox.maximumWorld);
+            minBBoxAfter = Vector3.Minimize(minBBoxAfter, bbox.boundingBox.minimumWorld);
+            maxBBoxAfter = Vector3.Maximize(maxBBoxAfter, bbox.boundingBox.maximumWorld);
           }
           
           const sizeAfter = maxBBoxAfter.subtract(minBBoxAfter);
@@ -172,7 +185,17 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
           // 调整相机
           camera.setTarget(Vector3.Zero());
           camera.radius = maxDim * scale * 1.5; // 减小距离，让模型显示得更大（原来是 3）
-          camera.beta = Math.PI / 3; // 设置45度的俯视角度，确保能看到模型顶部
+          
+          // 根据文件类型设置不同的相机角度
+          if (isObjFile) {
+            // OBJ模型使用更平的视角
+            camera.beta = Math.PI / 4; // 45度俯视
+            camera.alpha = Math.PI / 4; // 45度水平角度
+          } else {
+            // STL模型使用更陡的视角
+            camera.beta = Math.PI / 3; // 60度俯视
+            camera.alpha = Math.PI / 4; // 45度水平角度
+          }
           
           console.log('========== 相机信息 ==========');
           console.log('相机位置:', camera.position);
@@ -181,12 +204,6 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
           console.log('相机角度 alpha:', camera.alpha, '(弧度) =', camera.alpha * 180 / Math.PI, '(度)');
           console.log('相机角度 beta:', camera.beta, '(弧度) =', camera.beta * 180 / Math.PI, '(度)');
           console.log('相机视野:', camera.fov);
-          
-          // 计算相机能够看到的范围
-          const cameraHeight = camera.radius * Math.sin(camera.beta);
-          const cameraDistance = camera.radius * Math.cos(camera.beta);
-          console.log('相机高度:', cameraHeight);
-          console.log('相机水平距离:', cameraDistance);
           
           // 输出场景中所有网格的汇总信息
           console.log('========== 场景网格汇总 ==========');
@@ -249,12 +266,12 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
         }
       },
       (scene, message, exception) => {
-        console.error('加载STL模型失败:', message, exception);
+        console.error('加载3D模型失败:', message, exception);
         setStatus('error');
         URL.revokeObjectURL(fileUrl);
         engine.dispose();
       },
-      '.stl'                   // pluginExtension - 明确指定使用 STL 加载器
+      loaderExtension          // 明确指定加载器扩展名 (.obj 或 .stl)
     );
   }, [onThumbnailGenerated, stlFile]);
 
@@ -280,7 +297,7 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
       )}
       {status === 'error' && (
         <div className="text-center mt-2 text-danger">
-          <small>缩略图生成失败，请检查STL文件格式</small>
+          <small>缩略图生成失败，请检查3D模型文件格式</small>
         </div>
       )}
     </div>

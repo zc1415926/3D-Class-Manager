@@ -72,22 +72,43 @@ function StudentPage() {
     }
   }, [selectedYear, assignments]);
 
+  // 获取当前选中作业的文件类型
+  const currentAssignment = assignments.find(a => String(a.id) === String(formData.assignmentId));
+  const allowedFileTypes = currentAssignment?.upload_types || ['stl'];
+  const acceptAttribute = `.${allowedFileTypes.join(', .')}`;
+  const fileExtensions = allowedFileTypes.map(t => `.${t}`).join(', ');
+
   // 获取所有可用的年份
   const availableYears = [...new Set(students.map(s => s.year))].sort((a, b) => b - a);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      const newFormData = { ...prev, [name]: value };
+      
+      // 如果改变了作业选择，清除已选择的文件
+      if (name === 'assignmentId' && value !== prev.assignmentId) {
+        setSelectedFile(null);
+        setThumbnailFile(null);
+        setGeneratingThumbnail(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+      
+      return newFormData;
+    });
   };
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.type !== 'model/stl' && !file.name.endsWith('.stl')) {
-        setMessage({ type: 'danger', text: '请选择STL文件' });
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      if (!allowedFileTypes.includes(fileExtension)) {
+        setMessage({ 
+          type: 'danger', 
+          text: `请选择 ${fileExtensions} 格式的文件` 
+        });
         return;
       }
       if (file.size > 50 * 1024 * 1024) {
@@ -117,8 +138,12 @@ function StudentPage() {
     
     const file = e.dataTransfer.files[0];
     if (file) {
-      if (file.type !== 'model/stl' && !file.name.endsWith('.stl')) {
-        setMessage({ type: 'danger', text: '请选择STL文件' });
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      if (!allowedFileTypes.includes(fileExtension)) {
+        setMessage({ 
+          type: 'danger', 
+          text: `请选择 ${fileExtensions} 格式的文件` 
+        });
         return;
       }
       if (file.size > 50 * 1024 * 1024) {
@@ -136,7 +161,7 @@ function StudentPage() {
     e.preventDefault();
     
     if (!selectedFile) {
-      setMessage({ type: 'danger', text: '请选择STL文件' });
+      setMessage({ type: 'danger', text: `请选择 ${fileExtensions} 格式的文件` });
       return;
     }
 
@@ -262,6 +287,16 @@ function StudentPage() {
                 {filteredAssignments.length === 0 && selectedYear && (
                   <div className="form-text">该年份暂无进行中的作业</div>
                 )}
+                {currentAssignment && (
+                  <div className="form-text">
+                    <strong>允许的文件类型：</strong>
+                    {currentAssignment.upload_types.map((type, index) => (
+                      <span key={index} className="badge bg-info text-dark ms-1">
+                        {type.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mb-3">
@@ -319,7 +354,7 @@ function StudentPage() {
 
               <div className="mb-3">
                 <label className="form-label">
-                  STL文件 <span className="text-danger">*</span>
+                  文件 <span className="text-danger">*</span>
                 </label>
                 <div
                   className={`dropzone dropzone-sm ${selectedFile ? 'dropzone-success' : ''}`}
@@ -330,8 +365,9 @@ function StudentPage() {
                   <input
                     type="file"
                     ref={fileInputRef}
+                    key={acceptAttribute}
                     onChange={handleFileSelect}
-                    accept=".stl"
+                    accept={acceptAttribute}
                     style={{ display: 'none' }}
                     disabled={uploading}
                   />
@@ -355,8 +391,8 @@ function StudentPage() {
                         <path d="M9 15l2 -2l2 2" />
                         <path d="M12 11v8" />
                       </svg>
-                      <h5 className="mb-1">点击或拖拽上传STL文件</h5>
-                      <div className="text-muted">支持 .stl 格式，最大 50MB</div>
+                      <h5 className="mb-1">点击或拖拽上传文件</h5>
+                      <div className="text-muted">支持 {fileExtensions} 格式，最大 50MB</div>
                     </div>
                   )}
                 </div>
@@ -430,13 +466,14 @@ function StudentPage() {
             <div className="list-group list-group-flush">
               <div className="list-group-item d-flex align-items-center gap-3 py-3">
                 <div className="flex-fill">
-                  <div className="font-weight-medium">STL格式文件</div>
-                  <div className="text-muted">请确保上传的是有效的STL格式的3D模型文件</div>
+                  <div className="font-weight-medium">文件格式</div>
+                  <div className="text-muted">支持 {fileExtensions} 格式的文件</div>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                   <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                   <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                  <path d="M9 12l2 2l4 -4" />
+                  <path d="M9 12h6" />
+                  <path d="M12 9v6" />
                 </svg>
               </div>
               <div className="list-group-item d-flex align-items-center gap-3 py-3">

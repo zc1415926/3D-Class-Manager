@@ -14,6 +14,7 @@ import AccessDeniedPage from './pages/AccessDeniedPage';
 import AssignmentManagementPage from './pages/AssignmentManagementPage';
 import AssignmentNewPage from './pages/AssignmentNewPage';
 import AssignmentEditPage from './pages/AssignmentEditPage';
+import AssignmentViewPage from './pages/AssignmentViewPage';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ function AppContent() {
         <Route path="/access-denied" element={<AccessDeniedPage />} />
         <Route path="/assignments" element={<AssignmentManagementPage />} />
         <Route path="/assignments/new" element={<AssignmentNewPage />} />
+        <Route path="/assignments/:id" element={<AssignmentViewPage />} />
         <Route path="/assignments/:id/edit" element={<AssignmentEditPage />} />
       </Routes>
     </TablerLayout>

@@ -101,3 +101,32 @@ p, div, span, a, button {
 .ck-editor__editable {
   min-height: 400px;
 }
+
+/* 子菜单样式 */
+.nav-submenu {
+  padding-left: 2.5rem;
+  margin-top: 0.5rem;
+}
+
+.nav-link-arrow {
+  transition: transform 0.2s ease;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.nav-submenu .nav-link {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem 0;
+  border-radius: 0.25rem;
+}
+
+.nav-submenu .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme=light] .nav-submenu .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
