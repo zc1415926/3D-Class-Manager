@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import '@babylonjs/core';
 import '@babylonjs/loaders';
 import '@babylonjs/viewer';
+import { StandardMaterial, Color3 } from '@babylonjs/core';
 
 function ViewerPage() {
   const { id } = useParams();
@@ -13,6 +15,25 @@ function ViewerPage() {
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 设置石头质感灰色材质（与缩略图生成器一致）
+  const applyStoneMaterial = useCallback((scene) => {
+    if (!scene) return;
+    
+    scene.meshes.forEach(mesh => {
+      if (mesh.getTotalIndices() > 0) {
+        const material = new StandardMaterial('stoneMaterial', scene);
+        material.diffuseColor = new Color3(0.5, 0.5, 0.5); // 灰色
+        material.specularColor = new Color3(0.1, 0.1, 0.1); // 低高光，模拟粗糙表面
+        material.specularPower = 8; // 高光功率低，让高光更分散
+        material.ambientColor = new Color3(0.3, 0.3, 0.3); // 环境光颜色
+        material.emissiveColor = new Color3(0, 0, 0); // 不发光
+        material.backFaceCulling = false; // 显示所有面
+        
+        mesh.material = material;
+      }
+    });
+  }, []);
 
   const fetchSubmission = useCallback(async () => {
     setLoading(true);
@@ -36,6 +57,44 @@ function ViewerPage() {
   useEffect(() => {
     fetchSubmission();
   }, [fetchSubmission]);
+
+  // 当模型加载完成后应用石头质感材质
+  useEffect(() => {
+    if (viewerRef.current && submission) {
+      // 使用轮询方式检测场景加载
+      const checkAndApplyMaterial = () => {
+        const viewer = viewerRef.current;
+        if (viewer && viewer.engine && viewer.engine.scenes.length > 0) {
+          const scene = viewer.engine.scenes[0];
+          if (scene.meshes && scene.meshes.length > 0) {
+            applyStoneMaterial(scene);
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // 尝试立即应用
+      if (!checkAndApplyMaterial()) {
+        // 如果还没加载，使用轮询
+        const interval = setInterval(() => {
+          if (checkAndApplyMaterial()) {
+            clearInterval(interval);
+          }
+        }, 100);
+
+        // 10秒后停止轮询
+        const timeout = setTimeout(() => {
+          clearInterval(interval);
+        }, 10000);
+
+        return () => {
+          clearInterval(interval);
+          clearTimeout(timeout);
+        };
+      }
+    }
+  }, [submission, applyStoneMaterial]);
 
   // 获取返回路径
   const getBackPath = () => {

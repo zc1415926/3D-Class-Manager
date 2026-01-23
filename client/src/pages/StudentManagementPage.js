@@ -109,9 +109,11 @@ function StudentManagementPage() {
   };
 
   return (
-    <div className="container mt-4">
+    <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>👨‍🎓 学生管理页面</h2>
+        <div>
+          <div className="text-muted">管理所有学生信息</div>
+        </div>
         <div>
           <button
             className="btn btn-secondary me-2"
@@ -124,21 +126,34 @@ function StudentManagementPage() {
                 刷新中...
               </>
             ) : (
-              '🔄 刷新'
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                  <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                </svg>
+                刷新
+              </>
             )}
           </button>
           <button
             className="btn btn-primary"
             onClick={() => setShowAddModal(true)}
           >
-            ➕ 添加学生
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M12 5l0 14" />
+              <path d="M5 12l14 0" />
+            </svg>
+            添加学生
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
           {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
         </div>
       )}
 
@@ -147,94 +162,120 @@ function StudentManagementPage() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">加载中...</span>
           </div>
-          <p className="mt-3">加载学生列表中...</p>
+          <p className="mt-3 text-muted">加载学生列表中...</p>
         </div>
       ) : students.length === 0 ? (
-        <div className="text-center py-5">
-          <div className="display-1 mb-3">👨‍🎓</div>
-          <h4>暂无学生</h4>
-          <p className="text-muted">点击"添加学生"按钮开始添加...</p>
+        <div className="card">
+          <div className="empty py-5">
+            <div className="empty-img">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="64" height="64" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+              </svg>
+            </div>
+            <p className="empty-title">暂无学生</p>
+            <p className="empty-subtitle text-muted">点击"添加学生"按钮开始添加...</p>
+          </div>
         </div>
       ) : (
         <div className="card">
           <div className="card-body p-0">
-            <table className="table table-hover mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th style={{ width: '10%' }}>ID</th>
-                  <th style={{ width: '40%' }}>姓名</th>
-                  <th style={{ width: '20%' }}>年份</th>
-                  <th style={{ width: '20%' }}>创建时间</th>
-                  <th style={{ width: '10%' }}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student) => (
-                  <tr key={student.id}>
-                    <td>{student.id}</td>
-                    <td>
-                      <strong>{student.name}</strong>
-                    </td>
-                    <td>
-                      <span className="badge bg-info text-dark">{student.year}</span>
-                    </td>
-                    <td className="text-muted small">
-                      {new Date(student.createdAt).toLocaleString('zh-CN')}
-                    </td>
-                    <td>
-                      <div className="btn-group btn-group-sm">
-                        <button
-                          className="btn btn-outline-primary"
-                          onClick={() => handleEdit(student)}
-                          title="编辑"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={() => handleDelete(student.id)}
-                          title="删除"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
+            <div className="table-responsive">
+              <table className="table table-vcenter card-table">
+                <thead>
+                  <tr>
+                    <th className="w-1">ID</th>
+                    <th>姓名</th>
+                    <th>年份</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr key={student.id}>
+                      <td><span className="text-muted">{student.id}</span></td>
+                      <td>
+                        <div className="d-flex py-1 align-items-center">
+                          <span className="avatar me-2 bg-primary">S</span>
+                          <div className="flex-fill">
+                            <div className="font-weight-medium">{student.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge bg-info text-dark">{student.year}</span>
+                      </td>
+                      <td className="text-muted">
+                        {new Date(student.createdAt).toLocaleString('zh-CN')}
+                      </td>
+                      <td>
+                        <div className="btn-list flex-nowrap">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleEdit(student)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                              <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                              <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                              <path d="M16 5l3 3" />
+                            </svg>
+                            编辑
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDelete(student.id)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                              <path d="M4 7l16 0" />
+                              <path d="M10 11l0 6" />
+                              <path d="M14 11l0 6" />
+                              <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                              <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                            </svg>
+                            删除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* 添加学生模态框 */}
       {showAddModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
+        <div className="modal modal-blur fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">添加学生</h5>
                 <button type="button" className="btn-close" onClick={handleCloseModal}></button>
               </div>
               <div className="modal-body">
-                <form onSubmit={handleAddSubmit}>
+                <form onSubmit={handleAddSubmit} autoComplete="off">
                   <div className="mb-3">
-                    <label htmlFor="studentName" className="form-label">姓名</label>
+                    <label className="form-label">姓名</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="studentName"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
+                      placeholder="请输入学生姓名"
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="studentYear" className="form-label">年份</label>
+                    <label className="form-label">年份</label>
                     <input
                       type="number"
                       className="form-control"
-                      id="studentYear"
                       value={formData.year}
                       onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                       required
@@ -243,10 +284,10 @@ function StudentManagementPage() {
                     />
                   </div>
                   <div className="modal-footer px-0 pb-0">
-                    <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+                    <button type="button" className="btn btn-link link-secondary" onClick={handleCloseModal}>
                       取消
                     </button>
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn btn-primary ms-auto">
                       添加
                     </button>
                   </div>
@@ -259,32 +300,31 @@ function StudentManagementPage() {
 
       {/* 编辑学生模态框 */}
       {showEditModal && editingStudent && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
+        <div className="modal modal-blur fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">编辑学生</h5>
                 <button type="button" className="btn-close" onClick={handleCloseModal}></button>
               </div>
               <div className="modal-body">
-                <form onSubmit={handleEditSubmit}>
+                <form onSubmit={handleEditSubmit} autoComplete="off">
                   <div className="mb-3">
-                    <label htmlFor="editStudentName" className="form-label">姓名</label>
+                    <label className="form-label">姓名</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="editStudentName"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
+                      placeholder="请输入学生姓名"
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="editStudentYear" className="form-label">年份</label>
+                    <label className="form-label">年份</label>
                     <input
                       type="number"
                       className="form-control"
-                      id="editStudentYear"
                       value={formData.year}
                       onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                       required
@@ -293,10 +333,10 @@ function StudentManagementPage() {
                     />
                   </div>
                   <div className="modal-footer px-0 pb-0">
-                    <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+                    <button type="button" className="btn btn-link link-secondary" onClick={handleCloseModal}>
                       取消
                     </button>
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn btn-primary ms-auto">
                       保存
                     </button>
                   </div>

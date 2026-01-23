@@ -25,12 +25,48 @@ const initializeDatabase = () => {
       filename TEXT NOT NULL,
       filepath TEXT NOT NULL,
       thumbnail_path TEXT,
+      assignment_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {
       if (err) {
         console.error('创建submissions表失败:', err.message);
       } else {
         console.log('submissions表已就绪');
+        
+        // 检查并添加 assignment_id 字段（如果不存在）
+        db.all("PRAGMA table_info(submissions)", [], (err, columns) => {
+          if (!err) {
+            const hasAssignmentId = columns.some(col => col.name === 'assignment_id');
+            if (!hasAssignmentId) {
+              db.run('ALTER TABLE submissions ADD COLUMN assignment_id INTEGER', (err) => {
+                if (err) {
+                  console.error('添加assignment_id字段失败:', err.message);
+                } else {
+                  console.log('已添加assignment_id字段到submissions表');
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // 创建assignments表
+    db.run(`CREATE TABLE IF NOT EXISTS assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      year INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      upload_types TEXT NOT NULL,
+      description TEXT,
+      deadline DATETIME,
+      status TEXT DEFAULT 'active',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('创建assignments表失败:', err.message);
+      } else {
+        console.log('assignments表已就绪');
       }
     });
 

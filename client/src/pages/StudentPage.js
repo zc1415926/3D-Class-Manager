@@ -5,12 +5,15 @@ import STLThumbnailGenerator from '../components/STLThumbnailGenerator';
 function StudentPage() {
   const currentYear = new Date().getFullYear();
   const [students, setStudents] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [filteredStudents, setFilteredStudents] = useState([]);
+  const [filteredAssignments, setFilteredAssignments] = useState([]);
   const [formData, setFormData] = useState({
     studentName: '',
     workName: '',
-    description: ''
+    description: '',
+    assignmentId: ''
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -19,9 +22,10 @@ function StudentPage() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const fileInputRef = useRef(null);
 
-  // 获取所有学生列表
+  // 获取所有学生列表和作业列表
   useEffect(() => {
     fetchStudents();
+    fetchAssignments();
   }, []);
 
   const fetchStudents = async () => {
@@ -35,7 +39,18 @@ function StudentPage() {
     }
   };
 
-  // 根据选中的年份筛选学生
+  const fetchAssignments = async () => {
+    try {
+      const response = await axios.get('/api/assignments');
+      if (response.data.success) {
+        setAssignments(response.data.data);
+      }
+    } catch (err) {
+      console.error('获取作业列表失败:', err);
+    }
+  };
+
+  // 根据选中的年份筛选学生和作业
   useEffect(() => {
     const filtered = students.filter(student => student.year === selectedYear);
     setFilteredStudents(filtered);
@@ -44,6 +59,18 @@ function StudentPage() {
       setFormData(prev => ({ ...prev, studentName: '' }));
     }
   }, [selectedYear, students]);
+
+  // 根据选中的年份筛选作业
+  useEffect(() => {
+    const filtered = assignments.filter(assignment => 
+      assignment.year === selectedYear && assignment.status === 'active'
+    );
+    setFilteredAssignments(filtered);
+    // 如果当前选中的作业不在筛选结果中，清空选择
+    if (formData.assignmentId && !filtered.some(a => a.id === formData.assignmentId)) {
+      setFormData(prev => ({ ...prev, assignmentId: '' }));
+    }
+  }, [selectedYear, assignments]);
 
   // 获取所有可用的年份
   const availableYears = [...new Set(students.map(s => s.year))].sort((a, b) => b - a);
@@ -131,6 +158,9 @@ function StudentPage() {
     if (thumbnailFile) {
       formDataToSend.append('thumbnail', thumbnailFile);
     }
+    if (formData.assignmentId) {
+      formDataToSend.append('assignmentId', formData.assignmentId);
+    }
     formDataToSend.append('studentName', formData.studentName);
     formDataToSend.append('studentYear', selectedYear);
     formDataToSend.append('workName', formData.workName);
@@ -167,27 +197,35 @@ function StudentPage() {
   };
 
   return (
-    <div className="row justify-content-center">
+    <div className="row row-cards">
       <div className="col-md-8 col-lg-6">
-        <div className="card">
-          <div className="card-header bg-primary text-white">
-            <h4 className="mb-0">📝 提交3D作品</h4>
+        <div className="card card-md">
+          <div className="card-stamp card-stamp-lg">
+            <div className="card-stamp-icon bg-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                <path d="M12 12l3 2" />
+                <path d="M12 12l-3 -2" />
+              </svg>
+            </div>
           </div>
           <div className="card-body">
             {message.text && (
-              <div className={`alert alert-${message.type} mb-3`} role="alert">
+              <div className={`alert alert-${message.type} alert-dismissible fade show mb-4`} role="alert">
                 {message.text}
+                <button type="button" className="btn-close" onClick={() => setMessage({ type: '', text: '' })}></button>
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off">
               <div className="mb-3">
-                <label htmlFor="studentYear" className="form-label">
+                <label className="form-label">
                   年份 <span className="text-danger">*</span>
                 </label>
                 <select
                   className="form-select"
-                  id="studentYear"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                   required
@@ -204,12 +242,34 @@ function StudentPage() {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="studentName" className="form-label">
+                <label className="form-label">
+                  选择作业
+                </label>
+                <select
+                  className="form-select"
+                  name="assignmentId"
+                  value={formData.assignmentId}
+                  onChange={handleInputChange}
+                  disabled={uploading}
+                >
+                  <option value="">不选择作业（自由提交）</option>
+                  {filteredAssignments.map(assignment => (
+                    <option key={assignment.id} value={assignment.id}>
+                      {assignment.name}
+                    </option>
+                  ))}
+                </select>
+                {filteredAssignments.length === 0 && selectedYear && (
+                  <div className="form-text">该年份暂无进行中的作业</div>
+                )}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
                   学生姓名 <span className="text-danger">*</span>
                 </label>
                 <select
                   className="form-select"
-                  id="studentName"
                   name="studentName"
                   value={formData.studentName}
                   onChange={handleInputChange}
@@ -222,18 +282,17 @@ function StudentPage() {
                   ))}
                 </select>
                 {filteredStudents.length === 0 && (
-                  <small className="text-muted">该年份暂无学生，请先在学生管理页面添加</small>
+                  <div className="form-text">该年份暂无学生，请先在学生管理页面添加</div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label htmlFor="workName" className="form-label">
+                <label className="form-label">
                   作品名称 <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
                   className="form-control"
-                  id="workName"
                   name="workName"
                   value={formData.workName}
                   onChange={handleInputChange}
@@ -244,12 +303,11 @@ function StudentPage() {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="description" className="form-label">
+                <label className="form-label">
                   作品说明
                 </label>
                 <textarea
                   className="form-control"
-                  id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
@@ -264,7 +322,7 @@ function StudentPage() {
                   STL文件 <span className="text-danger">*</span>
                 </label>
                 <div
-                  className={`upload-area ${selectedFile ? 'border-success' : ''}`}
+                  className={`dropzone dropzone-sm ${selectedFile ? 'dropzone-success' : ''}`}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
@@ -278,16 +336,27 @@ function StudentPage() {
                     disabled={uploading}
                   />
                   {selectedFile ? (
-                    <div>
-                      <h5 className="text-success">✓ {selectedFile.name}</h5>
-                      <p className="text-muted mb-0">
+                    <div className="text-center py-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon text-green mb-2" width="48" height="48" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                        <path d="M9 12l2 2l4 -4" />
+                      </svg>
+                      <h5 className="text-success">{selectedFile.name}</h5>
+                      <div className="text-muted">
                         文件大小: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+                      </div>
                     </div>
                   ) : (
-                    <div>
-                      <h5 className="mb-2">📁 点击或拖拽上传STL文件</h5>
-                      <p className="text-muted mb-0">支持 .stl 格式，最大 50MB</p>
+                    <div className="text-center py-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted mb-2" width="48" height="48" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-12" />
+                        <path d="M9 15l2 -2l2 2" />
+                        <path d="M12 11v8" />
+                      </svg>
+                      <h5 className="mb-1">点击或拖拽上传STL文件</h5>
+                      <div className="text-muted">支持 .stl 格式，最大 50MB</div>
                     </div>
                   )}
                 </div>
@@ -300,49 +369,110 @@ function StudentPage() {
                   </div>
                 )}
                 {thumbnailFile && (
-                  <div className="mt-3 text-center">
-                    <p className="text-success mb-2">✓ 缩略图生成成功</p>
-                    <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto', aspectRatio: '16/10' }}>
-                      <img
-                        src={URL.createObjectURL(thumbnailFile)}
-                        alt="缩略图预览"
-                        className="img-fluid rounded"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
+                  <div className="mt-3">
+                    <div className="alert alert-success d-flex align-items-center" role="alert">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                        <path d="M9 12l2 2l4 -4" />
+                      </svg>
+                      <div>
+                        <div className="alert-title">缩略图生成成功</div>
+                        <div className="text-muted">您可以在下方预览模型缩略图</div>
+                      </div>
+                    </div>
+                    <div className="card border-0 bg-transparent">
+                      <div className="card-body p-0">
+                        <img
+                          src={URL.createObjectURL(thumbnailFile)}
+                          alt="缩略图预览"
+                          className="img-fluid rounded"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary w-100"
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    提交中...
-                  </>
-                ) : (
-                  '提交作品'
-                )}
-              </button>
+              <div className="form-footer">
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={uploading || generatingThumbnail}
+                >
+                  {uploading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      提交中...
+                    </>
+                  ) : (
+                    '提交作品'
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
 
         <div className="card mt-4">
-          <div className="card-header bg-info text-white">
-            <h5 className="mb-0">💡 提交说明</h5>
+          <div className="card-header">
+            <h3 className="card-title">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon text-yellow me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                <path d="M9 12h6" />
+                <path d="M12 9v6" />
+              </svg>
+              提交说明
+            </h3>
           </div>
           <div className="card-body">
-            <ul className="mb-0">
-              <li>请确保上传的是有效的STL格式的3D模型文件</li>
-              <li>文件大小不能超过50MB</li>
-              <li>选择文件后会自动生成缩略图预览</li>
-              <li>教师可以在教师页面查看所有提交的作品</li>
-            </ul>
+            <div className="list-group list-group-flush">
+              <div className="list-group-item d-flex align-items-center gap-3 py-3">
+                <div className="flex-fill">
+                  <div className="font-weight-medium">STL格式文件</div>
+                  <div className="text-muted">请确保上传的是有效的STL格式的3D模型文件</div>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                  <path d="M9 12l2 2l4 -4" />
+                </svg>
+              </div>
+              <div className="list-group-item d-flex align-items-center gap-3 py-3">
+                <div className="flex-fill">
+                  <div className="font-weight-medium">文件大小限制</div>
+                  <div className="text-muted">文件大小不能超过50MB</div>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                  <path d="M9 12l2 2l4 -4" />
+                </svg>
+              </div>
+              <div className="list-group-item d-flex align-items-center gap-3 py-3">
+                <div className="flex-fill">
+                  <div className="font-weight-medium">自动生成缩略图</div>
+                  <div className="text-muted">选择文件后会自动生成缩略图预览</div>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                  <path d="M9 12l2 2l4 -4" />
+                </svg>
+              </div>
+              <div className="list-group-item d-flex align-items-center gap-3 py-3">
+                <div className="flex-fill">
+                  <div className="font-weight-medium">教师审核</div>
+                  <div className="text-muted">教师可以在教师页面查看所有提交的作品</div>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                  <path d="M9 12l2 2l4 -4" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>

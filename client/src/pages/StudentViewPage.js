@@ -133,36 +133,15 @@ function StudentViewPage() {
   };
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>👁️ 查看学生作品</h2>
-        <button
-          className="btn btn-outline-secondary"
-          onClick={fetchData}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              刷新中...
-            </>
-          ) : (
-            '🔄 刷新'
-          )}
-        </button>
-      </div>
-
+    <div>
       {/* 筛选区域 */}
       <div className="card mb-4">
         <div className="card-body">
-          <div className="row">
-            <div className="col-md-4 mb-3">
-              <label htmlFor="filterYear" className="form-label">
-                年份
-              </label>
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">年份</label>
               <select
                 className="form-select"
-                id="filterYear"
                 value={selectedYear || ''}
                 onChange={handleYearChange}
                 disabled={loading}
@@ -173,13 +152,10 @@ function StudentViewPage() {
                 ))}
               </select>
             </div>
-            <div className="col-md-4 mb-3">
-              <label htmlFor="filterStudent" className="form-label">
-                学生姓名
-              </label>
+            <div className="col-md-4">
+              <label className="form-label">学生姓名</label>
               <select
                 className="form-select"
-                id="filterStudent"
                 value={selectedStudent}
                 onChange={handleStudentChange}
                 disabled={loading || !selectedYear}
@@ -190,13 +166,18 @@ function StudentViewPage() {
                 ))}
               </select>
             </div>
-            <div className="col-md-4 mb-3 d-flex align-items-end">
+            <div className="col-md-4 d-flex align-items-end">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={handleResetFilters}
                 disabled={loading || (!selectedYear && !selectedStudent)}
               >
-                🔄 重置筛选
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                  <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                </svg>
+                重置筛选
               </button>
             </div>
           </div>
@@ -204,8 +185,9 @@ function StudentViewPage() {
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
           {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
         </div>
       )}
 
@@ -214,15 +196,23 @@ function StudentViewPage() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">加载中...</span>
           </div>
-          <p className="mt-3">加载中...</p>
+          <p className="mt-3 text-muted">加载中...</p>
         </div>
       ) : displayedSubmissions.length === 0 ? (
-        <div className="text-center py-5">
-          <div className="display-1 mb-3">📭</div>
-          <h4>暂无作品</h4>
-          <p className="text-muted">
-            {selectedYear || selectedStudent ? '没有找到符合条件的作品' : '还没有任何作品提交'}
-          </p>
+        <div className="card">
+          <div className="empty py-5">
+            <div className="empty-img">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="64" height="64" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                <path d="M9 12l2 2l4 -4" />
+              </svg>
+            </div>
+            <p className="empty-title">暂无作品</p>
+            <p className="empty-subtitle text-muted">
+              {selectedYear || selectedStudent ? '没有找到符合条件的作品' : '还没有任何作品提交'}
+            </p>
+          </div>
         </div>
       ) : (
         <>
@@ -234,51 +224,73 @@ function StudentViewPage() {
             </small>
           </div>
           
-          <div className="row">
+          <div className="row row-cards">
             {currentSubmissions.map((submission) => (
-              <div key={submission.id} className="col-md-6 col-lg-4 mb-4">
-                <div className="card h-100">
+              <div key={submission.id} className="col-md-6 col-lg-4">
+                <div className="card">
                   {submission.thumbnailPath ? (
-                    <div style={{ position: 'relative', width: '100%', paddingTop: '62.5%' }}>
-                      <img
-                        src={submission.thumbnailPath}
-                        alt={submission.workName}
-                        className="card-img-top"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="card-img-top thumbnail-placeholder" style={{ aspectRatio: '16/10', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa' }}>
-                      <span>📷 暂无缩略图</span>
-                    </div>
-                  )}
-                  <div className="card-body">
-                    <h5 className="card-title mb-2" style={{ fontSize: '1.25rem', fontWeight: '600' }}>
-                      {submission.workName}
-                    </h5>
-                    <p className="card-text mb-2" style={{ fontSize: '0.95rem' }}>
-                      <span className="me-2">👤</span>
-                      <strong>{submission.studentName}</strong>
-                      <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
-                    </p>
-                    {submission.description && (
-                      <p className="card-text text-muted small mb-3" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>
-                        {submission.description}
-                      </p>
-                    )}
-                    <p className="card-text text-muted small mb-0" style={{ fontSize: '0.85rem' }}>
-                      📅 {new Date(submission.createdAt).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
-                  <div className="card-footer bg-white border-top-0">
                     <Link
                       to={`/viewer/${submission.id}`}
                       state={{ from: location.pathname }}
-                      className="btn btn-primary w-100"
-                      style={{ borderRadius: '8px', padding: '0.5rem 0.25rem', fontSize: '0.85rem' }}
+                      className="card-img-top position-relative"
+                      style={{ aspectRatio: '16/10', overflow: 'hidden', display: 'block', cursor: 'pointer' }}
                     >
-                      👁️ 在线预览
+                      <img
+                        src={submission.thumbnailPath}
+                        alt={submission.workName}
+                        className="w-100 h-100 object-fit-contain bg-light"
+                        style={{ transition: 'opacity 0.2s' }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                      />
                     </Link>
+                  ) : (
+                    <Link
+                      to={`/viewer/${submission.id}`}
+                      state={{ from: location.pathname }}
+                      className="card-img-top bg-light d-flex align-items-center justify-content-center"
+                      style={{ aspectRatio: '16/10', display: 'block', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#e9ecef'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+                    >
+                      <div className="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted mb-2" width="48" height="48" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M15 8h.01" />
+                          <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+                          <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+                          <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                        </svg>
+                        <div className="text-muted">暂无缩略图</div>
+                      </div>
+                    </Link>
+                  )}
+                  <div className="card-body">
+                    <h3 className="card-title">{submission.workName}</h3>
+                    <div className="d-flex align-items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                      </svg>
+                      <span className="text-muted">{submission.studentName}</span>
+                      <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
+                    </div>
+                    {submission.description && (
+                      <p className="card-text text-muted">{submission.description}</p>
+                    )}
+                    <div className="d-flex align-items-center text-muted">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+                        <path d="M16 3v4" />
+                        <path d="M8 3v4" />
+                        <path d="M4 11h16" />
+                        <path d="M15 11v6" />
+                        <path d="M15 15h.01" />
+                      </svg>
+                      <span>{new Date(submission.createdAt).toLocaleString('zh-CN')}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -287,14 +299,18 @@ function StudentViewPage() {
 
           {/* 分页控件 */}
           {totalPages > 1 && (
-            <nav aria-label="分页导航" className="mt-4">
-              <ul className="pagination justify-content-center">
+            <div className="d-flex justify-content-center mt-4">
+              <ul className="pagination">
                 <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                   <button
                     className="page-link"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                   >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M15 6l-6 6l6 6" />
+                    </svg>
                     上一页
                   </button>
                 </li>
@@ -319,10 +335,14 @@ function StudentViewPage() {
                     disabled={currentPage === totalPages}
                   >
                     下一页
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M9 6l6 6l-6 6" />
+                    </svg>
                   </button>
                 </li>
               </ul>
-            </nav>
+            </div>
           )}
         </>
       )}

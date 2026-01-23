@@ -61,7 +61,7 @@ router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }]), as
       return res.status(400).json({ error: '请上传STL文件' });
     }
 
-    const { studentName, studentYear, workName, description } = req.body;
+    const { studentName, studentYear, workName, description, assignmentId } = req.body;
 
     if (!studentName || !studentYear || !workName) {
       return res.status(400).json({ error: '学生姓名、年份和作品名称不能为空' });
@@ -73,8 +73,8 @@ router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }]), as
     // 保存到数据库
     const db = getDatabase();
     const stmt = db.prepare(`
-      INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -84,7 +84,8 @@ router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }]), as
       description || '',
       stlFile.filename,
       stlFile.path,
-      thumbnailFile ? thumbnailFile.path : null
+      thumbnailFile ? thumbnailFile.path : null,
+      assignmentId ? parseInt(assignmentId) : null
     );
 
     stmt.finalize();

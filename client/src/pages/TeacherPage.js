@@ -77,7 +77,9 @@ function TeacherPage() {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>📚 作品管理页面</h2>
+        <div>
+          <div className="text-muted">查看和管理所有学生提交的3D作品</div>
+        </div>
         <button
           className="btn btn-primary"
           onClick={fetchSubmissions}
@@ -89,14 +91,22 @@ function TeacherPage() {
               刷新中...
             </>
           ) : (
-            '🔄 刷新列表'
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+              </svg>
+              刷新列表
+            </>
           )}
         </button>
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
           {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
         </div>
       )}
 
@@ -105,79 +115,121 @@ function TeacherPage() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">加载中...</span>
           </div>
-          <p className="mt-3">加载作品列表中...</p>
+          <p className="mt-3 text-muted">加载作品列表中...</p>
         </div>
       ) : submissions.length === 0 ? (
-        <div className="text-center py-5">
-          <div className="display-1 mb-3">📭</div>
-          <h4>暂无作品提交</h4>
-          <p className="text-muted">等待学生提交作品...</p>
+        <div className="card">
+          <div className="empty py-5">
+            <div className="empty-img">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="64" height="64" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                <path d="M9 12l2 2l4 -4" />
+              </svg>
+            </div>
+            <p className="empty-title">暂无作品提交</p>
+            <p className="empty-subtitle text-muted">等待学生提交作品...</p>
+          </div>
         </div>
       ) : (
-        <div className="row">
+        <div className="row row-cards">
           {submissions.map((submission) => (
-            <div key={submission.id} className="col-md-6 col-lg-4 mb-4">
-              <div className="card h-100">
+            <div key={submission.id} className="col-md-6 col-lg-4">
+              <div className="card">
                 {submission.thumbnailPath ? (
-                  <div style={{ position: 'relative', width: '100%', paddingTop: '62.5%' }}>
+                  <div className="card-img-top position-relative" style={{ aspectRatio: '16/10', overflow: 'hidden' }}>
                     <img
                       src={submission.thumbnailPath}
                       alt={submission.workName}
-                      className="card-img-top"
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
+                      className="w-100 h-100 object-fit-contain bg-light"
                     />
                   </div>
                 ) : (
-                  <div className="card-img-top thumbnail-placeholder" style={{ aspectRatio: '16/10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span>📷 暂无缩略图</span>
+                  <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ aspectRatio: '16/10' }}>
+                    <div className="text-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted mb-2" width="48" height="48" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M15 8h.01" />
+                        <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+                        <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+                        <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                      </svg>
+                      <div className="text-muted">暂无缩略图</div>
+                    </div>
                   </div>
                 )}
                 <div className="card-body">
-                  <h5 className="card-title mb-2" style={{ fontSize: '1.25rem', fontWeight: '600' }}>
-                    {submission.workName}
-                  </h5>
+                  <h3 className="card-title">{submission.workName}</h3>
                   {submission.description && (
-                    <p className="card-text text-muted small mb-3" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>
-                      {submission.description}
-                    </p>
+                    <p className="card-text text-muted">{submission.description}</p>
                   )}
-                  <p className="card-text mb-2" style={{ fontSize: '0.95rem' }}>
-                    <span className="me-2">👤</span>
-                    <strong>{submission.studentName}</strong>
+                  <div className="d-flex align-items-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                      <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                    </svg>
+                    <span className="text-muted">{submission.studentName}</span>
                     <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
-                  </p>
-                  <p className="card-text text-muted small mb-0" style={{ fontSize: '0.85rem' }}>
-                    📅 {new Date(submission.createdAt).toLocaleString('zh-CN')}
-                  </p>
+                  </div>
+                  <div className="d-flex align-items-center text-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+                      <path d="M16 3v4" />
+                      <path d="M8 3v4" />
+                      <path d="M4 11h16" />
+                      <path d="M15 11v6" />
+                      <path d="M15 15h.01" />
+                    </svg>
+                    <span>{new Date(submission.createdAt).toLocaleString('zh-CN')}</span>
+                  </div>
                 </div>
-                <div className="card-footer bg-white border-top-0">
+                <div className="card-footer">
                   <div className="row g-2">
                     <div className="col-4">
                       <Link
                         to={`/viewer/${submission.id}`}
                         state={{ from: location.pathname }}
                         className="btn btn-primary w-100"
-                        style={{ borderRadius: '8px', padding: '0.5rem 0.25rem', fontSize: '0.85rem' }}
                       >
-                        👁️ 查看
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                          <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                          <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                        </svg>
+                        查看
                       </Link>
                     </div>
                     <div className="col-4">
                       <button
                         onClick={() => handleDownload(submission.filename)}
                         className="btn btn-success w-100"
-                        style={{ borderRadius: '8px', padding: '0.5rem 0.25rem', fontSize: '0.85rem' }}
                       >
-                        📥 下载
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                          <path d="M7 11l5 5l5 -5" />
+                          <path d="M12 4l0 12" />
+                        </svg>
+                        下载
                       </button>
                     </div>
                     <div className="col-4">
                       <button
                         className="btn btn-outline-danger w-100"
                         onClick={() => handleDelete(submission.id)}
-                        style={{ borderRadius: '8px', padding: '0.5rem 0.25rem', fontSize: '0.85rem' }}
                       >
-                        🗑️ 删除
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M4 7l16 0" />
+                          <path d="M10 11l0 6" />
+                          <path d="M14 11l0 6" />
+                          <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                          <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                        </svg>
+                        删除
                       </button>
                     </div>
                   </div>

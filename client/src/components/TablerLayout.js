@@ -26,6 +26,11 @@ const TablerLayout = ({ children }) => {
     },
     ...(isAuthenticated ? [
       {
+        title: '作业管理',
+        path: '/assignments',
+        icon: 'clipboard'
+      },
+      {
         title: '作品管理',
         path: '/works',
         icon: 'list'
@@ -106,6 +111,16 @@ const TablerLayout = ({ children }) => {
                             <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
                           </svg>
                         )}
+                        {item.icon === 'clipboard' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-clipboard" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+                            <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v0a2 2 0 0 1 2 -2" />
+                            <path d="M9 14h6" />
+                            <path d="M9 10h6" />
+                            <path d="M9 18h6" />
+                          </svg>
+                        )}
                         {item.icon === 'list' && (
                           <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-list" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -170,25 +185,6 @@ const TablerLayout = ({ children }) => {
 
       {/* 主内容区域 */}
       <div className="page-wrapper">
-        <div className="container-xl">
-          {/* 页面头部 */}
-          <div className="page-header d-print-none">
-            <div className="row align-items-center">
-              <div className="col">
-                <h2 className="page-title" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 500, fontSize: '1.5rem'}}>3D建模课程管理</h2>
-                <div className="page-pretitle" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 400, fontSize: '0.9rem', opacity: 0.8}}>
-                  {location.pathname === '/' && '首页'}
-                  {location.pathname === '/submit' && '作品提交'}
-                  {location.pathname === '/student-view' && '查看作品'}
-                  {location.pathname === '/works' && '作品管理'}
-                  {location.pathname === '/student-management' && '学生管理'}
-                  {location.pathname === '/dashboard' && '教师主页'}
-                  {location.pathname === '/login' && '教师登录'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* 页面主体内容 */}
         <div className="page-body">

@@ -105,6 +105,12 @@ app.use('/api/submissions', submissionRoutes);
 const studentRoutes = require('./routes/students');
 app.use('/api/students', studentRoutes);
 
+const assignmentRoutes = require('./routes/assignments');
+app.use('/api/assignments', assignmentRoutes);
+
+const uploadRoutes = require('./routes/upload');
+app.use('/api', uploadRoutes);
+
 // 健康检查
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });

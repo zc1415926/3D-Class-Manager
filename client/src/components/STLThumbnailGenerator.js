@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight, Vector3, Color3, Color4, StandardMaterial } from '@babylonjs/core';
-import '@babylonjs/loaders';
+import { Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight, Vector3, Color3, Color4, StandardMaterial, SceneLoader } from '@babylonjs/core';
+import '@babylonjs/loaders/glTF/2.0/glTFLoader';
 import '@babylonjs/loaders/OBJ/objFileLoader';
 import '@babylonjs/loaders/STL/stlFileLoader';
 import '@babylonjs/materials';
@@ -18,12 +18,16 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
     const engine = new Engine(canvas, true, {
       antialias: true,
       preserveDrawingBuffer: true,
-      stencil: true
+      stencil: true,
+      disableWebGL2Support: false,
+      powerPreference: 'high-performance'
     });
 
     // 创建场景
     const scene = new Scene(engine);
     scene.clearColor = new Color4(0.95, 0.95, 0.95, 1);
+    // 禁用环境贴图以减少 WebGL 警告
+    scene.environmentTexture = null;
 
     // 创建相机 - 调整角度以更好地俯视模型
     const camera = new ArcRotateCamera(
@@ -75,8 +79,6 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
     console.log('开始加载STL文件:', fileName, 'URL:', fileUrl, '文件大小:', stlFile.size);
 
     // 使用 ImportMesh 加载 STL 模型
-    const { SceneLoader } = require('@babylonjs/core');
-
     SceneLoader.ImportMesh(
       null,                    // meshNames
       fileUrl,                 // rootUrl
