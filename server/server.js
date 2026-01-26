@@ -1,3 +1,6 @@
+// 加载环境变量
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -8,7 +11,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // 中间件
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,23 +54,15 @@ app.get('/api/download/:filename', (req, res) => {
     console.error('文件统计错误:', error);
     res.status(500);
     res.setHeader('Content-Type', 'text/html');
-    return res.send('<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>Error accessing file</p></body></html>');
+    return res.send('<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>File stat failed</p></body></html>');
   }
-  
-  console.log(`文件大小: ${stats.size} bytes`); // 调试日志
 
-  // 设置响应头
+  // 设置响应头以强制下载
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
   res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-Length', stats.size);
-  res.setHeader('Cache-Control', 'no-cache');
 
-  // 确保没有其他响应被发送
-  res.on('error', (err) => {
-    console.error('响应错误:', err);
-  });
-
-  // 创建文件流并发送
+  // 创建文件流并传输
   const fileStream = fs.createReadStream(filePath);
   fileStream.pipe(res);
 
@@ -99,6 +97,9 @@ ensureDirectories();
 const db = initializeDatabase();
 
 // 路由
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
 const submissionRoutes = require('./routes/submissions');
 app.use('/api/submissions', submissionRoutes);
 
@@ -110,6 +111,9 @@ app.use('/api/assignments', assignmentRoutes);
 
 const uploadRoutes = require('./routes/upload');
 app.use('/api', uploadRoutes);
+
+const uploadTypesRoutes = require('./routes/upload-types');
+app.use('/api/upload-types', uploadTypesRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

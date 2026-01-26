@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import UploadRequirementModal from '../components/UploadRequirementModal';
 
 // CKEditor 5
 import { CKEditor } from '@ckeditor/ckeditor5-react';
@@ -15,15 +16,18 @@ function AssignmentNewPage() {
   const [formData, setFormData] = useState({
     year: new Date().getFullYear(),
     name: '',
-    upload_types: ['stl'],
     description: '',
     deadline: '',
     status: 'active'
   });
 
+  const [uploadRequirements, setUploadRequirements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showRequirementModal, setShowRequirementModal] = useState(false);
+  const [editingRequirement, setEditingRequirement] = useState(null);
+  const [tempAssignmentId, setTempAssignmentId] = useState(null);
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -39,27 +43,83 @@ function AssignmentNewPage() {
     }));
   };
 
-  const handleUploadTypeToggle = (type) => {
-    setFormData(prev => {
-      const types = prev.upload_types.includes(type)
-        ? prev.upload_types.filter(t => t !== type)
-        : [...prev.upload_types, type];
-      return { ...prev, upload_types: types };
-    });
+  const handleAddRequirement = () => {
+    setEditingRequirement(null);
+    setShowRequirementModal(true);
   };
 
-  const handleAddUploadType = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const newType = e.target.value.trim().toLowerCase();
-      if (newType && !formData.upload_types.includes(newType)) {
-        setFormData(prev => ({
-          ...prev,
-          upload_types: [...prev.upload_types, newType]
-        }));
-      }
-      e.target.value = '';
+  const handleEditRequirement = (requirement) => {
+    setEditingRequirement(requirement);
+    setShowRequirementModal(true);
+  };
+
+  const handleDeleteRequirement = async (requirementId) => {
+    if (!window.confirm('确定要删除这个上传要求吗？')) {
+      return;
     }
+
+    try {
+      const response = await axios.delete(`/api/assignments/${tempAssignmentId}/upload-requirements/${requirementId}`);
+      if (response.data.success) {
+        setUploadRequirements(prev => prev.filter(r => r.id !== requirementId));
+        setSuccess('上传要求已删除');
+        setTimeout(() => setSuccess(null), 2000);
+      }
+    } catch (err) {
+      console.error('删除上传要求错误:', err);
+      setError('删除上传要求失败');
+    }
+  };
+
+  const handleRequirementModalClose = () => {
+    setShowRequirementModal(false);
+    setEditingRequirement(null);
+  };
+
+  const handleRequirementSaved = (requirementData) => {
+    if (editingRequirement) {
+      // 更新现有要求
+      setUploadRequirements(prev => 
+        prev.map(r => r.id === editingRequirement.id ? { ...r, ...requirementData } : r)
+      );
+    } else {
+      // 添加新要求，自动设置排序为当前数量
+      setUploadRequirements(prev => [...prev, { 
+        id: Date.now(), 
+        ...requirementData,
+        sort_order: prev.length
+      }]);
+    }
+    setShowRequirementModal(false);
+    setEditingRequirement(null);
+  };
+
+  const handleMoveUp = (index) => {
+    const sorted = [...uploadRequirements].sort((a, b) => a.sort_order - b.sort_order);
+    if (index <= 0) return; // 已经在第一位，不能上移
+    
+    // 交换相邻元素的 sort_order
+    const currentReq = sorted[index];
+    const prevReq = sorted[index - 1];
+    const tempSortOrder = currentReq.sort_order;
+    currentReq.sort_order = prevReq.sort_order;
+    prevReq.sort_order = tempSortOrder;
+    
+    setUploadRequirements([...sorted]);
+  };
+
+  const handleMoveDown = (index) => {
+    const sorted = [...uploadRequirements].sort((a, b) => a.sort_order - b.sort_order);
+    if (index >= sorted.length - 1) return; // 已经在最后一位，不能下移
+    
+    // 交换相邻元素的 sort_order
+    const currentReq = sorted[index];
+    const nextReq = sorted[index + 1];
+    const tempSortOrder = currentReq.sort_order;
+    currentReq.sort_order = nextReq.sort_order;
+    nextReq.sort_order = tempSortOrder;
+    
+    setUploadRequirements([...sorted]);
   };
 
   const handleSubmit = async (e) => {
@@ -69,15 +129,32 @@ function AssignmentNewPage() {
     setSuccess(null);
 
     try {
+      // 创建作业
       const payload = {
         ...formData,
-        upload_types: formData.upload_types,
+        upload_types: uploadRequirements.map(r => r.upload_type),
         deadline: formData.deadline || null
       };
 
       const response = await axios.post('/api/assignments', payload);
 
       if (response.data.success) {
+        const assignmentId = response.data.data.id;
+        setTempAssignmentId(assignmentId);
+
+        // 批量创建上传要求
+        if (uploadRequirements.length > 0) {
+          for (const req of uploadRequirements) {
+            await axios.post(`/api/assignments/${assignmentId}/upload-requirements`, {
+              name: req.name,
+              upload_type: req.upload_type,
+              is_required: req.is_required,
+              is_published: req.is_published,
+              sort_order: req.sort_order
+            });
+          }
+        }
+
         setSuccess('作业创建成功！');
         setTimeout(() => {
           navigate('/assignments');
@@ -98,9 +175,11 @@ function AssignmentNewPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <Link to="/assignments" className="btn btn-outline-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-left" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-              <path d="M15 6l-6 6l6 6" />
+              <path d="M5 12l14 0" />
+              <path d="M5 12l6 -6" />
+              <path d="M5 12l6 6" />
             </svg>
             返回
           </Link>
@@ -163,40 +242,120 @@ function AssignmentNewPage() {
 
                 <div className="mb-3">
                   <label className="form-label">
-                    上传类型 <span className="text-danger">*</span>
+                    上传要求 <span className="text-danger">*</span>
                   </label>
                   <div className="mb-2">
-                    {['stl', 'obj'].map(type => (
-                      <button
-                        key={type}
-                        type="button"
-                        className={`btn me-2 mb-2 ${
-                          formData.upload_types.includes(type)
-                            ? 'btn-primary'
-                            : 'btn-outline-primary'
-                        }`}
-                        onClick={() => handleUploadTypeToggle(type)}
-                      >
-                        {type.toUpperCase()}
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      onClick={handleAddRequirement}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-plus me-1" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 5l0 14" />
+                        <path d="M5 12l14 0" />
+                      </svg>
+                      添加上传要求
+                    </button>
                   </div>
-                  <div className="mb-2">
-                    <small className="text-muted">已选择的类型：</small>
-                    {formData.upload_types.map((type, index) => (
-                      <span key={index} className="badge bg-info text-dark me-1">
-                        {type.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="输入新类型后按回车添加（例如：fbx、gltf）"
-                      onKeyDown={handleAddUploadType}
-                    />
-                  </div>
+
+                  {uploadRequirements.length === 0 ? (
+                    <div className="text-center py-4 border rounded bg-light">
+                      <div className="text-muted">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-upload mb-2" width="48" height="48" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                          <path d="M7 11l5 5l5 -5" />
+                          <path d="M12 4l0 12" />
+                        </svg>
+                        <p>暂无上传要求</p>
+                        <small className="text-muted">点击"添加上传要求"按钮设置学生需要提交的内容</small>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="list-group list-group-flush border rounded">
+                      {[...uploadRequirements].sort((a, b) => a.sort_order - b.sort_order).map((req, index) => (
+                        <div key={req.id} className="list-group-item d-flex justify-content-between align-items-center">
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div className="me-3">
+                              <span className="badge bg-secondary me-2">{index + 1}</span>
+                            </div>
+                            <div className="flex-grow-1">
+                              <div className="fw-medium">
+                                {req.name}
+                                {req.is_required && <span className="badge bg-danger ms-2">必填</span>}
+                                {!req.is_published && <span className="badge bg-warning ms-2">未发布</span>}
+                              </div>
+                              <div className="text-muted small">
+                                类型: {req.upload_type.toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleMoveUp(index)}
+                              disabled={index === 0}
+                              title="上移"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-up" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12 5l0 14" />
+                                <path d="M18 11l-6 -6" />
+                                <path d="M6 11l6 -6" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleMoveDown(index)}
+                              disabled={index === uploadRequirements.length - 1}
+                              title="下移"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-down" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12 5l0 14" />
+                                <path d="M18 13l-6 6" />
+                                <path d="M6 13l6 6" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleEditRequirement(req)}
+                              title="编辑"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                                <path d="M16 5l3 3" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDeleteRequirement(req.id)}
+                              title="删除"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-trash" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M4 7l16 0" />
+                                <path d="M10 11l0 6" />
+                                <path d="M14 11l0 6" />
+                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {uploadRequirements.length === 0 && (
+                    <div className="text-danger small mt-1">请至少添加一个上传要求</div>
+                  )}
                 </div>
 
                 <div className="row mb-3">
@@ -292,10 +451,11 @@ function AssignmentNewPage() {
           <div className="card">
             <div className="card-body">
               <h3 className="card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-yellow me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-bulb text-yellow me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                   <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                  <path d="M9 12l2 2l4 -4" />
+                  <path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" />
+                  <path d="M9 16a5 5 0 1 1 6 0" />
+                  <path d="M15 20h0" />
                 </svg>
                 提示
               </h3>
@@ -323,6 +483,34 @@ function AssignmentNewPage() {
           </div>
         </div>
       </div>
+
+      {/* 上传要求模态框 */}
+      {showRequirementModal && (
+        <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog modal-lg" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {editingRequirement ? '编辑上传要求' : '添加上传要求'}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleRequirementModalClose}
+                ></button>
+              </div>
+              <UploadRequirementModal
+                assignmentId={tempAssignmentId}
+                requirement={editingRequirement}
+                currentCount={uploadRequirements.length}
+                onSave={handleRequirementSaved}
+                onCancel={handleRequirementModalClose}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      {showRequirementModal && <div className="modal-backdrop fade show" onClick={handleRequirementModalClose}></div>}
     </div>
   );
 }

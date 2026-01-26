@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const dbPath = path.join(__dirname, '../database/stl_manager.db');
 
@@ -67,6 +68,150 @@ const initializeDatabase = () => {
         console.error('创建assignments表失败:', err.message);
       } else {
         console.log('assignments表已就绪');
+      }
+    });
+
+    // 创建submission_files表（存储每个上传要求对应的文件）
+    db.run(`CREATE TABLE IF NOT EXISTS submission_files (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      submission_id INTEGER NOT NULL,
+      requirement_id INTEGER,
+      filename TEXT NOT NULL,
+      filepath TEXT NOT NULL,
+      thumbnail_path TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+      FOREIGN KEY (requirement_id) REFERENCES assignment_upload_requirements(id) ON DELETE CASCADE
+    )`, (err) => {
+      if (err) {
+        console.error('创建submission_files表失败:', err.message);
+      } else {
+        console.log('submission_files表已就绪');
+      }
+    });
+
+    // 创建assignment_upload_requirements表
+    db.run(`CREATE TABLE IF NOT EXISTS assignment_upload_requirements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      assignment_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      upload_type TEXT NOT NULL,
+      is_required INTEGER DEFAULT 1,
+      is_published INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
+    )`, (err) => {
+      if (err) {
+        console.error('创建assignment_upload_requirements表失败:', err.message);
+      } else {
+        console.log('assignment_upload_requirements表已就绪');
+      }
+    });
+
+    // 创建upload_types表（上传类型管理）
+    db.run(`CREATE TABLE IF NOT EXISTS upload_types (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL UNIQUE,
+      description TEXT,
+      icon TEXT,
+      extensions TEXT,
+      is_active INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('创建upload_types表失败:', err.message);
+      } else {
+        console.log('upload_types表已就绪');
+        
+        // 检查并添加 extensions 字段（如果不存在）
+        db.all("PRAGMA table_info(upload_types)", [], (err, columns) => {
+          if (!err) {
+            const hasExtensions = columns.some(col => col.name === 'extensions');
+            if (!hasExtensions) {
+              db.run('ALTER TABLE upload_types ADD COLUMN extensions TEXT', (err) => {
+                if (err) {
+                  console.error('添加extensions字段失败:', err.message);
+                } else {
+                  console.log('已添加extensions字段到upload_types表');
+                }
+              });
+            }
+          }
+        });
+        
+        // 检查是否已有数据，如果没有则添加默认上传类型
+        db.get('SELECT COUNT(*) as count FROM upload_types', [], (err, row) => {
+          if (err) {
+            console.error('查询上传类型数量失败:', err.message);
+          } else if (row.count === 0) {
+            // 添加默认上传类型
+            const defaultUploadTypes = [
+              { name: 'STL模型', code: 'stl', description: '3D打印模型文件', icon: 'box', extensions: '.stl', sort_order: 1 },
+              { name: 'OBJ模型', code: 'obj', description: '3D对象文件', icon: 'box', extensions: '.obj', sort_order: 2 },
+              { name: '图片', code: 'image', description: '图片文件（JPG、PNG等）', icon: 'photo', extensions: '.jpg,.jpeg,.png,.gif,.webp', sort_order: 3 },
+              { name: '文档', code: 'document', description: '文档文件（PDF、DOC等）', icon: 'file-text', extensions: '.pdf,.doc,.docx,.txt', sort_order: 4 },
+              { name: '视频', code: 'video', description: '视频文件', icon: 'video', extensions: '.mp4,.avi,.mov,.mkv', sort_order: 5 }
+            ];
+            
+            const stmt = db.prepare('INSERT INTO upload_types (name, code, description, icon, extensions, sort_order) VALUES (?, ?, ?, ?, ?, ?)');
+            defaultUploadTypes.forEach(type => {
+              stmt.run(type.name, type.code, type.description, type.icon, type.extensions, type.sort_order);
+            });
+            stmt.finalize();
+            console.log('已添加5个默认上传类型');
+          }
+        });
+      }
+    });
+
+    // 创建users表（用户认证）
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT DEFAULT 'teacher',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('创建users表失败:', err.message);
+      } else {
+        console.log('users表已就绪');
+        
+        // 检查是否已有数据，如果没有则添加默认管理员用户
+        db.get('SELECT COUNT(*) as count FROM users', [], (err, row) => {
+          if (err) {
+            console.error('查询用户数量失败:', err.message);
+          } else if (row.count === 0) {
+            // 添加默认管理员用户
+            const defaultUsername = 'zc1415926';
+            const defaultPassword = 'zaq12wsx';
+            
+            // 加密密码
+            bcrypt.hash(defaultPassword, 10, (err, hashedPassword) => {
+              if (err) {
+                console.error('密码加密失败:', err.message);
+                return;
+              }
+              
+              const stmt = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)');
+              stmt.run(defaultUsername, hashedPassword, 'teacher', (err) => {
+                if (err) {
+                  console.error('添加默认用户失败:', err.message);
+                } else {
+                  console.log('已添加默认管理员用户');
+                  console.log(`  用户名: ${defaultUsername}`);
+                  console.log(`  密码: ${defaultPassword}`);
+                  console.log('  请在生产环境中修改默认密码！');
+                }
+              });
+              stmt.finalize();
+            });
+          }
+        });
       }
     });
 

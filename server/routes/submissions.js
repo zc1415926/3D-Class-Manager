@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { getDatabase } = require('../models/database');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -10,9 +11,10 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadDir;
-    if (file.fieldname === 'stlFile') {
+    // 支持多种字段名：stlFile, files[], thumbnails[]
+    if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
       uploadDir = path.join(__dirname, '../uploads');
-    } else if (file.fieldname === 'thumbnail') {
+    } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
       uploadDir = path.join(__dirname, '../thumbnails');
     } else {
       return cb(new Error('未知的文件字段'));
@@ -26,9 +28,9 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     
-    if (file.fieldname === 'stlFile') {
+    if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
       cb(null, uniqueSuffix + path.extname(file.originalname));
-    } else if (file.fieldname === 'thumbnail') {
+    } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
       cb(null, uniqueSuffix + '.png');
     }
   }
@@ -39,8 +41,9 @@ const upload = multer({
   fileFilter: function (req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
     if (file.fieldname === 'stlFile') {
-      if (ext !== '.stl') {
-        return cb(new Error('只允许上传STL文件'));
+      // 支持STL和OBJ格式
+      if (ext !== '.stl' && ext !== '.obj') {
+        return cb(new Error('只允许上传STL或OBJ文件'));
       }
     } else if (file.fieldname === 'thumbnail') {
       if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
@@ -54,57 +57,148 @@ const upload = multer({
   }
 });
 
-// 提交STL作品
-router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }]), async (req, res) => {
+// 提交3D作品（支持多文件上传）
+router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }, { name: 'files' }, { name: 'thumbnails' }]), async (req, res) => {
   try {
-    if (!req.files || !req.files.stlFile) {
-      return res.status(400).json({ error: '请上传STL文件' });
-    }
-
-    const { studentName, studentYear, workName, description, assignmentId } = req.body;
+    const { studentName, studentYear, workName, description, assignmentId, requirementIds } = req.body;
 
     if (!studentName || !studentYear || !workName) {
       return res.status(400).json({ error: '学生姓名、年份和作品名称不能为空' });
     }
 
-    const stlFile = req.files.stlFile[0];
-    const thumbnailFile = req.files.thumbnail ? req.files.thumbnail[0] : null;
-
-    // 保存到数据库
     const db = getDatabase();
-    const stmt = db.prepare(`
-      INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
 
-    stmt.run(
-      studentName,
-      parseInt(studentYear),
-      workName,
-      description || '',
-      stlFile.filename,
-      stlFile.path,
-      thumbnailFile ? thumbnailFile.path : null,
-      assignmentId ? parseInt(assignmentId) : null
-    );
+    // 检查是否是新的多文件上传方式
+    const isMultiFileUpload = req.files.files && req.files.files.length > 0;
 
-    stmt.finalize();
+    let submissionId;
+    let files = [];
 
-    res.json({
-      success: true,
-      message: '作品提交成功',
-      data: {
-        id: this.lastID,
+    if (isMultiFileUpload) {
+      // 新的多文件上传方式
+      const filesArray = req.files.files;
+      const thumbnailsArray = req.files.thumbnails || [];
+
+      // 创建提交记录（不存储文件信息）
+      const stmt = db.prepare(`
+        INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+      stmt.run(
         studentName,
+        parseInt(studentYear),
         workName,
-        description,
-        filename: stlFile.filename,
-        thumbnailPath: thumbnailFile ? `/thumbnails/${thumbnailFile.filename}` : null
+        description || '',
+        assignmentId ? parseInt(assignmentId) : null,
+        function(err) {
+          if (err) {
+            console.error('创建提交记录失败:', err.message);
+            db.close();
+            return res.status(500).json({ success: false, error: '创建提交记录失败' });
+          }
+
+          submissionId = this.lastID;
+
+          // 保存每个文件到 submission_files 表
+          filesArray.forEach((file, index) => {
+            const requirementId = requirementIds ? parseInt(requirementIds[index]) : null;
+            const thumbnailFile = thumbnailsArray[index] || null;
+
+            const fileStmt = db.prepare(`
+              INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
+              VALUES (?, ?, ?, ?, ?)
+            `);
+
+            fileStmt.run(
+              submissionId,
+              requirementId,
+              file.filename,
+              file.path,
+              thumbnailFile ? thumbnailFile.path : null
+            );
+
+            files.push({
+              id: this.lastID,
+              requirement_id: requirementId,
+              filename: file.filename,
+              filepath: file.path,
+              thumbnail_path: thumbnailFile ? thumbnailFile.path : null
+            });
+
+            fileStmt.finalize();
+          });
+
+          res.json({
+            success: true,
+            message: '作品提交成功',
+            data: {
+              id: submissionId,
+              studentName,
+              workName,
+              files: files
+            }
+          });
+
+          db.close();
+        }
+      );
+
+      stmt.finalize();
+
+    } else {
+      // 旧的单文件上传方式（向后兼容）
+      if (!req.files || !req.files.stlFile) {
+        db.close();
+        return res.status(400).json({ error: '请上传3D模型文件（STL或OBJ格式）' });
       }
-    });
+
+      const stlFile = req.files.stlFile[0];
+      const thumbnailFile = req.files.thumbnail ? req.files.thumbnail[0] : null;
+
+      const stmt = db.prepare(`
+        INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      stmt.run(
+        studentName,
+        parseInt(studentYear),
+        workName,
+        description || '',
+        stlFile.filename,
+        stlFile.path,
+        thumbnailFile ? thumbnailFile.path : null,
+        assignmentId ? parseInt(assignmentId) : null,
+        function(err) {
+          if (err) {
+            console.error('创建提交记录失败:', err.message);
+            db.close();
+            return res.status(500).json({ success: false, error: '创建提交记录失败' });
+          }
+
+          submissionId = this.lastID;
+
+          res.json({
+            success: true,
+            message: '作品提交成功',
+            data: {
+              id: submissionId,
+              studentName,
+              workName,
+              filename: stlFile.filename
+            }
+          });
+
+          db.close();
+        }
+      );
+
+      stmt.finalize();
+    }
   } catch (error) {
-    console.error('提交失败:', error);
-    res.status(500).json({ error: '提交失败: ' + error.message });
+    console.error('提交错误:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -199,7 +293,7 @@ router.get('/:id', (req, res) => {
 });
 
 // 删除作品
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import AssignmentDeleteModal from '../components/AssignmentDeleteModal';
 
 function AssignmentManagementPage() {
   const { isAuthenticated } = useAuth();
@@ -9,6 +10,8 @@ function AssignmentManagementPage() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
@@ -38,21 +41,36 @@ function AssignmentManagementPage() {
   }, [isAuthenticated, navigate, fetchAssignments]);
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`确定要删除作业"${name}"吗？`)) {
-      return;
-    }
-
+    // 先检查作业是否有作品
     try {
-      const response = await axios.delete(`/api/assignments/${id}`);
+      const response = await axios.get(`/api/assignments/${id}`);
       if (response.data.success) {
-        fetchAssignments();
-      } else {
-        alert(response.data.error || '删除失败');
+        const assignment = response.data.data;
+        if (assignment.submission_count > 0) {
+          // 有作品，显示模态框
+          setSelectedAssignment(assignment);
+          setShowDeleteModal(true);
+        } else {
+          // 没有作品，直接删除
+          if (window.confirm(`确定要删除作业"${name}"吗？`)) {
+            await axios.delete(`/api/assignments/${id}`);
+            fetchAssignments();
+          }
+        }
       }
     } catch (err) {
-      console.error('删除作业错误:', err);
-      alert('删除失败，请稍后重试');
+      console.error('检查作业失败:', err);
+      alert(`检查作业失败：${err.response?.data?.error || err.message || '请稍后重试'}`);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowDeleteModal(false);
+    setSelectedAssignment(null);
+  };
+
+  const handleModalDelete = () => {
+    fetchAssignments();
   };
 
   const getStatusBadge = (status) => {
@@ -216,6 +234,14 @@ function AssignmentManagementPage() {
           </div>
         </div>
       )}
+
+      {/* 删除确认模态框 */}
+      <AssignmentDeleteModal
+        show={showDeleteModal}
+        assignment={selectedAssignment}
+        onClose={handleModalClose}
+        onDelete={handleModalDelete}
+      />
     </div>
   );
 }

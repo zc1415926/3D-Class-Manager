@@ -37,23 +37,28 @@ const TablerLayout = ({ children }) => {
         icon: 'list'
       },
       {
-        title: '学生管理',
-        path: '/student-management',
-        icon: 'users'
-      },
-      {
         title: '教师主页',
         icon: 'user',
         children: [
+          {
+            title: '教师面板',
+            path: '/dashboard',
+            icon: 'dashboard'
+          },
           {
             title: '管理作业',
             path: '/assignments',
             icon: 'clipboard'
           },
           {
-            title: '教师面板',
-            path: '/dashboard',
-            icon: 'dashboard'
+            title: '学生管理',
+            path: '/student-management',
+            icon: 'users'
+          },
+          {
+            title: '上传类型管理',
+            path: '/upload-types',
+            icon: 'list-details'
           }
         ]
       }
@@ -98,162 +103,69 @@ const TablerLayout = ({ children }) => {
               {menuItems.map((item, index) => {
                 const hasChildren = item.children && item.children.length > 0;
                 const isExpanded = expandedMenus[item.title];
-                const isMenuActive = hasChildren && item.children.some(child => isActive(child.path));
 
-                return (
-                  <li key={index} className="nav-item">
-                    {hasChildren ? (
-                      <>
-                        <a 
-                          className={`nav-link ${isMenuActive ? 'active' : ''}`}
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleMenu(item.title);
-                          }}
-                        >
-                          <span className="nav-link-icon">
-                            {item.icon === 'user' && (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                              </svg>
-                            )}
-                          </span>
-                          <span className="nav-link-title">{item.title}</span>
-                          <span className={`nav-link-arrow ms-auto ${isExpanded ? 'rotate-180' : ''}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M6 9l6 6l6 -6" />
-                            </svg>
-                          </span>
-                        </a>
-                        {isExpanded && (
-                          <ul className="nav nav-submenu">
-                            {item.children.map((child, childIndex) => (
-                              <li key={childIndex} className="nav-item">
-                                <Link 
-                                  className={`nav-link ${isActive(child.path) ? 'active' : ''}`}
-                                  to={child.path}
-                                >
-                                  <span className="nav-link-icon">
-                                    {child.icon === 'clipboard' && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-clipboard" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
-                                        <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v0a2 2 0 0 1 2 -2" />
-                                      </svg>
-                                    )}
-                                    {child.icon === 'dashboard' && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-dashboard" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <path d="M12 13m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-                                        <path d="M3.6 9h16.8" />
-                                        <path d="M3.6 15h16.8" />
-                                        <path d="M11.5 3a17 17 0 0 0 0 18" />
-                                        <path d="M12.5 3a17 17 0 0 1 0 18" />
-                                      </svg>
-                                    )}
-                                  </span>
-                                  <span className="nav-link-title">{child.title}</span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </>
-                    ) : item.action ? (
+                if (hasChildren) {
+                  return (
+                    <li className="nav-item" key={index}>
                       <a 
-                        className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+                        className={`nav-link ${isExpanded ? 'active' : ''}`}
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          item.action();
+                          toggleMenu(item.title);
                         }}
                       >
-                        <span className="nav-link-icon">
-                          {item.icon === 'home' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
-                              <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
-                              <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
-                            </svg>
-                          )}
-                          {item.icon === 'upload' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-upload" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-12" />
-                              <path d="M9 15l2 -2l2 2" />
-                              <path d="M12 11v8" />
-                            </svg>
-                          )}
-                          {item.icon === 'eye' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-eye" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                              <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
-                            </svg>
-                          )}
-                          {item.icon === 'clipboard' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-clipboard" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
-                              <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v0a2 2 0 0 1 2 -2" />
-                              <path d="M9 14h6" />
-                              <path d="M9 10h6" />
-                              <path d="M9 18h6" />
-                            </svg>
-                          )}
-                          {item.icon === 'list' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-list" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M9 6l11 0" />
-                              <path d="M9 12l11 0" />
-                              <path d="M9 18l11 0" />
-                              <path d="M5 6l0 .01" />
-                              <path d="M5 12l0 .01" />
-                              <path d="M5 18l0 .01" />
-                            </svg>
-                          )}
-                          {item.icon === 'users' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-users" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-                              <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                              <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
-                            </svg>
-                          )}
-                          {item.icon === 'logout' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-logout" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                              <path d="M7 12h14l-3 -3m0 6l3 -3" />
-                            </svg>
-                          )}
-                          {item.icon === 'login' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-login" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                              <path d="M21 12h-13l3 -3m0 6l-3 -3" />
-                            </svg>
-                          )}
+                        <span className={`nav-link-icon d-md-none d-lg-inline-block`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className={`icon icon-tabler icon-tabler-${item.icon}`} width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M4 6h16" />
+                            <path d="M4 12h16" />
+                            <path d="M4 18h16" />
+                          </svg>
                         </span>
                         <span className="nav-link-title">{item.title}</span>
-                      </a>
-                    ) : (
-                      <Link 
-                        className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                        to={item.path}
-                      >
-                        <span className="nav-link-icon d-md-none d-lg-inline-block">
-                          <i className={`ti ti-${item.icon}`}></i>
+                        <span className={`nav-link-arrow ${isExpanded ? 'collapsed' : ''}`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M6 9l6 6l6 -6" />
+                          </svg>
                         </span>
-                        <span className="nav-link-title" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 400, fontSize: '0.95rem'}}>{item.title}</span>
-                      </Link>
-                    )}
+                      </a>
+                      <div className={`collapse ${isExpanded ? 'show' : ''}`} id={`submenu-${index}`}>
+                        <ul className="nav nav-submenu">
+                          {item.children.map((child, childIndex) => (
+                            <li className="nav-item" key={childIndex}>
+                              <Link 
+                                className={`nav-link ${isActive(child.path) ? 'active' : ''}`} 
+                                to={child.path}
+                              >
+                                <span className="nav-link-title">{child.title}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li className="nav-item" key={index}>
+                    <Link 
+                      className={`nav-link ${isActive(item.path) ? 'active' : ''}`} 
+                      to={item.path}
+                      onClick={item.action ? item.action : undefined}
+                    >
+                      <span className="nav-link-icon d-md-none d-lg-inline-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`icon icon-tabler icon-tabler-${item.icon}`} width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M4 6h16" />
+                          <path d="M4 12h16" />
+                          <path d="M4 18h16" />
+                        </svg>
+                      </span>
+                      <span className="nav-link-title">{item.title}</span>
+                    </Link>
                   </li>
                 );
               })}
@@ -262,10 +174,34 @@ const TablerLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* 主内容区域 */}
+      {/* 主内容区 */}
       <div className="page-wrapper">
+        {/* 顶部导航栏 */}
+        <header className="navbar navbar-expand-md d-none d-lg-flex d-print-none">
+          <div className="container-xl">
+            <button className="navbar-toggler" type="button" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+              <span className="navbar-toggler-icon"></span>
+            </button>
+            <div className="navbar-nav flex-row order-md-last">
+              {isAuthenticated && (
+                <div className="nav-item dropdown">
+                  <a href="#" className="nav-link d-flex lh-1 text-reset p-0">
+                    <span className="avatar avatar-sm" style={{backgroundColor: '#206bc4'}}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                      </svg>
+                    </span>
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="collapse navbar-collapse" id="navbar-menu"></div>
+          </div>
+        </header>
 
-        {/* 页面主体内容 */}
+        {/* 页面内容 */}
         <div className="page-body">
           <div className="container-xl">
             {children}
@@ -273,24 +209,21 @@ const TablerLayout = ({ children }) => {
         </div>
 
         {/* 页脚 */}
-        <footer className="footer footer-transparent py-3 mt-auto">
+        <footer className="footer footer-transparent d-print-none">
           <div className="container-xl">
             <div className="row text-center align-items-center flex-row-reverse">
-              <div className="col-lg-auto ms-lg-auto">
+              <div className="col-12 col-lg-auto mt-3 mt-lg-0">
                 <ul className="list-inline list-inline-dots mb-0">
                   <li className="list-inline-item">
-                    <a href="https://github.com/zc1415926/3D-Class-Manager" className="link-secondary" rel="noopener">
-                      3D-Class-Manager
-                    </a>
+                    <a href="#" className="link-secondary">帮助</a>
+                  </li>
+                  <li className="list-inline-item">
+                    <a href="#" className="link-secondary">关于</a>
                   </li>
                 </ul>
               </div>
               <div className="col-12 col-lg-auto mt-3 mt-lg-0">
-                <ul className="list-inline list-inline-dots mb-0">
-                  <li className="list-inline-item" style={{fontFamily: "'MiSans', sans-serif", fontWeight: 400, fontSize: '0.85rem'}}>
-                    &copy; 2026 小学3D建模课程管理系统
-                  </li>
-                </ul>
+                <a href="#" className="link-secondary">3D建模课程管理系统</a>
               </div>
             </div>
           </div>

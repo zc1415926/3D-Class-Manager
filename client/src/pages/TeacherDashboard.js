@@ -122,7 +122,7 @@ function TeacherDashboard() {
               <div className="row align-items-center">
                 <div className="col-auto">
                   <span className="bg-primary text-white avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon-tabler icon-tabler-check" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                       <path d="M4 19l2 2l4 -4" />
                       <path d="M20 10a4 4 0 1 0 -8 0a4 4 0 0 0 8 0" />
@@ -135,7 +135,7 @@ function TeacherDashboard() {
                   <div className="card-subtitle">查看、下载和管理所有学生作品</div>
                 </div>
                 <div className="col-auto">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon-tabler icon-tabler-chevron-right text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                     <path d="M9 6l6 6l-6 6" />
                   </svg>
@@ -162,7 +162,7 @@ function TeacherDashboard() {
                   <div className="card-subtitle">添加、编辑和删除学生信息</div>
                 </div>
                 <div className="col-auto">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon-tabler icon-tabler-chevron-right text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                     <path d="M9 6l6 6l-6 6" />
                   </svg>
@@ -224,6 +224,29 @@ function TeacherDashboard() {
                 </svg>
               </div>
             </div>
+          <div className="list-group-item" onClick={() => navigate('/upload-types')}>
+            <div className="row align-items-center">
+              <div className="col-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z" />
+                  <path d="M14 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z" />
+                  <path d="M7 17v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z" />
+                  <path d="M17 17v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z" />
+                </svg>
+              </div>
+              <div className="col text-truncate">
+                <span className="text-reset d-block">上传类型管理</span>
+                <div className="d-block text-muted text-truncate mt-n1">管理作业上传类型（STL、OBJ、图片等）</div>
+              </div>
+              <div className="col-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 6l6 6l-6 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
           </div>
           <div className="list-group-item" onClick={() => navigate('/submit')}>
             <div className="row align-items-center">

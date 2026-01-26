@@ -16,7 +16,7 @@ function ViewerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 设置石头质感灰色材质（与缩略图生成器一致）
+  // 设置石头质感灰色材质（与缩略图生成器一致）并应用初始旋转
   const applyStoneMaterial = useCallback((scene) => {
     if (!scene) return;
     
@@ -31,6 +31,10 @@ function ViewerPage() {
         material.backFaceCulling = false; // 显示所有面
         
         mesh.material = material;
+        
+        // 初始Y轴旋转180度
+        mesh.rotation.y = Math.PI;
+        mesh.computeWorldMatrix(true);
       }
     });
   }, []);

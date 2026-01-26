@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+tabler/
+tabler-icons/
 
 # Production builds
 client/build/

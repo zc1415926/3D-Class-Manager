@@ -1,5 +1,6 @@
 const express = require('express');
 const { getDatabase } = require('../models/database');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.get('/', (req, res) => {
 });
 
 // 添加学生
-router.post('/', (req, res) => {
+router.post('/', authenticateToken, (req, res) => {
   try {
     const { name, year } = req.body;
 
@@ -72,7 +73,7 @@ router.post('/', (req, res) => {
 });
 
 // 更新学生信息
-router.put('/:id', (req, res) => {
+router.put('/:id', authenticateToken, (req, res) => {
   try {
     const { name, year } = req.body;
     const studentId = req.params.id;
@@ -113,7 +114,7 @@ router.put('/:id', (req, res) => {
 });
 
 // 删除学生
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
   try {
     const db = getDatabase();
     
