@@ -32,12 +32,8 @@ function AssignmentViewPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     fetchAssignment();
-  }, [isAuthenticated, navigate, fetchAssignment]);
+  }, [fetchAssignment]);
 
   const getStatusBadge = (status) => {
     return status === 'active' 
@@ -120,20 +116,22 @@ function AssignmentViewPage() {
                     <span dangerouslySetInnerHTML={{ __html: getStatusBadge(assignment.status) }} />
                   </div>
                 </div>
-                <div className="btn-list">
-                  <Link 
-                    to={`/assignments/${assignment.id}/edit`} 
-                    className="btn btn-sm btn-primary"
-                  >
-                    编辑
-                  </Link>
-                  <Link 
-                    to={`/assignments/${assignment.id}/submissions`}
-                    className="btn btn-sm btn-info"
-                  >
-                    查看作品 ({assignment.submission_count || 0})
-                  </Link>
-                </div>
+                {isAuthenticated && (
+                  <div className="btn-list">
+                    <Link 
+                      to={`/assignments/${assignment.id}/edit`} 
+                      className="btn btn-sm btn-primary"
+                    >
+                      编辑
+                    </Link>
+                    <Link 
+                      to={`/assignments/${assignment.id}/submissions`}
+                      className="btn btn-sm btn-info"
+                    >
+                      查看作品 ({assignment.submission_count || 0})
+                    </Link>
+                  </div>
+                )}
               </div>
 
               <div className="mb-4">
@@ -226,32 +224,34 @@ function AssignmentViewPage() {
             </div>
           </div>
 
-          <div className="card mt-3">
-            <div className="card-body">
-              <h3 className="card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-yellow me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                  <path d="M9 12l2 2l4 -4" />
-                </svg>
-                快捷操作
-              </h3>
-              <div className="d-grid gap-2">
-                <Link 
-                  to={`/assignments/${assignment.id}/submissions`}
-                  className="btn btn-outline-primary"
-                >
-                  查看所有提交作品
-                </Link>
-                <Link 
-                  to={`/assignments/${assignment.id}/edit`}
-                  className="btn btn-outline-secondary"
-                >
-                  编辑作业信息
-                </Link>
+          {isAuthenticated && (
+            <div className="card mt-3">
+              <div className="card-body">
+                <h3 className="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon text-yellow me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                    <path d="M9 12l2 2l4 -4" />
+                  </svg>
+                  快捷操作
+                </h3>
+                <div className="d-grid gap-2">
+                  <Link 
+                    to={`/assignments/${assignment.id}/submissions`}
+                    className="btn btn-outline-primary"
+                  >
+                    查看所有提交作品
+                  </Link>
+                  <Link 
+                    to={`/assignments/${assignment.id}/edit`}
+                    className="btn btn-outline-secondary"
+                  >
+                    编辑作业信息
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

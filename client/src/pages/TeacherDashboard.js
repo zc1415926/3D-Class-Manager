@@ -214,8 +214,8 @@ function TeacherDashboard() {
                 </svg>
               </div>
               <div className="col text-truncate">
-                <span className="text-reset d-block">作业管理</span>
-                <div className="d-block text-muted text-truncate mt-n1">创建和管理课程作业</div>
+                <span className="text-reset d-block">课时管理</span>
+                <div className="d-block text-muted text-truncate mt-n1">创建和管理课程课时</div>
               </div>
               <div className="col-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -224,6 +224,7 @@ function TeacherDashboard() {
                 </svg>
               </div>
             </div>
+          </div>
           <div className="list-group-item" onClick={() => navigate('/upload-types')}>
             <div className="row align-items-center">
               <div className="col-auto">
@@ -246,7 +247,6 @@ function TeacherDashboard() {
                 </svg>
               </div>
             </div>
-          </div>
           </div>
           <div className="list-group-item" onClick={() => navigate('/submit')}>
             <div className="row align-items-center">

@@ -54,7 +54,7 @@ function AssignmentNewPage() {
   };
 
   const handleDeleteRequirement = async (requirementId) => {
-    if (!window.confirm('确定要删除这个上传要求吗？')) {
+    if (!window.confirm('确定要删除这个作业要求吗？')) {
       return;
     }
 
@@ -62,12 +62,12 @@ function AssignmentNewPage() {
       const response = await axios.delete(`/api/assignments/${tempAssignmentId}/upload-requirements/${requirementId}`);
       if (response.data.success) {
         setUploadRequirements(prev => prev.filter(r => r.id !== requirementId));
-        setSuccess('上传要求已删除');
+        setSuccess('作业要求已删除');
         setTimeout(() => setSuccess(null), 2000);
       }
     } catch (err) {
-      console.error('删除上传要求错误:', err);
-      setError('删除上传要求失败');
+      console.error('删除作业要求错误:', err);
+      setError('删除作业要求失败');
     }
   };
 
@@ -174,12 +174,11 @@ function AssignmentNewPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
+          <h3 className="mb-1">创建作业</h3>
           <Link to="/assignments" className="btn btn-outline-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-left" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-              <path d="M5 12l14 0" />
-              <path d="M5 12l6 -6" />
-              <path d="M5 12l6 6" />
+              <path d="M15 6l-6 6l6 6" />
             </svg>
             返回
           </Link>
@@ -190,10 +189,13 @@ function AssignmentNewPage() {
         <div className="col-lg-8">
           <div className="card">
             <div className="card-body">
-              <h3 className="card-title mb-4">创建作业</h3>
-
               {error && (
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                    <path d="M10 10l4 4m0 -4l-4 4" />
+                  </svg>
                   {error}
                   <button type="button" className="btn-close" onClick={() => setError(null)}></button>
                 </div>
@@ -201,6 +203,11 @@ function AssignmentNewPage() {
 
               {success && (
                 <div className="alert alert-success alert-dismissible fade show" role="alert">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                    <path d="M9 12l2 2l4 -4" />
+                  </svg>
                   {success}
                   <button type="button" className="btn-close" onClick={() => setSuccess(null)}></button>
                 </div>
@@ -242,7 +249,7 @@ function AssignmentNewPage() {
 
                 <div className="mb-3">
                   <label className="form-label">
-                    上传要求 <span className="text-danger">*</span>
+                    作业要求 <span className="text-danger">*</span>
                   </label>
                   <div className="mb-2">
                     <button
@@ -255,7 +262,7 @@ function AssignmentNewPage() {
                         <path d="M12 5l0 14" />
                         <path d="M5 12l14 0" />
                       </svg>
-                      添加上传要求
+                      添加作业要求
                     </button>
                   </div>
 
@@ -268,8 +275,8 @@ function AssignmentNewPage() {
                           <path d="M7 11l5 5l5 -5" />
                           <path d="M12 4l0 12" />
                         </svg>
-                        <p>暂无上传要求</p>
-                        <small className="text-muted">点击"添加上传要求"按钮设置学生需要提交的内容</small>
+                        <p>暂无作业要求</p>
+                        <small className="text-muted">点击"添加作业要求"按钮设置学生需要提交的内容</small>
                       </div>
                     </div>
                   ) : (
@@ -354,7 +361,7 @@ function AssignmentNewPage() {
                     </div>
                   )}
                   {uploadRequirements.length === 0 && (
-                    <div className="text-danger small mt-1">请至少添加一个上传要求</div>
+                    <div className="text-danger small mt-1">请至少添加一个作业要求</div>
                   )}
                 </div>
 
@@ -405,12 +412,21 @@ function AssignmentNewPage() {
                           'bold',
                           'italic',
                           'underline',
-                          'link',
+                          'strikethrough',
+                          'code',
                           '|',
                           'bulletedList',
                           'numberedList',
                           '|',
+                          'outdent',
+                          'indent',
+                          '|',
+                          'link',
                           'imageUpload',
+                          'insertTable',
+                          'blockQuote',
+                          'mediaEmbed',
+                          'horizontalLine',
                           '|',
                           'undo',
                           'redo'
@@ -484,14 +500,14 @@ function AssignmentNewPage() {
         </div>
       </div>
 
-      {/* 上传要求模态框 */}
+      {/* 作业要求模态框 */}
       {showRequirementModal && (
         <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">
           <div className="modal-dialog modal-lg" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {editingRequirement ? '编辑上传要求' : '添加上传要求'}
+                  {editingRequirement ? '编辑作业要求' : '添加作业要求'}
                 </h5>
                 <button
                   type="button"

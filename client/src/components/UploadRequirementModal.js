@@ -78,18 +78,18 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
       }
 
       if (requirement) {
-        // 更新现有上传要求
+        // 更新现有作业要求
         const response = await axios.put(`/api/assignments/${assignmentId}/upload-requirements/${requirement.id}`, formData);
-        
+
         if (response.data.success) {
           onSave();
         } else {
           setError(response.data.error || '更新失败');
         }
       } else {
-        // 创建新上传要求
+        // 创建新作业要求
         const response = await axios.post(`/api/assignments/${assignmentId}/upload-requirements`, formData);
-        
+
         if (response.data.success) {
           onSave();
         } else {
@@ -97,7 +97,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
         }
       }
     } catch (err) {
-      console.error('保存上传要求错误:', err);
+      console.error('保存作业要求错误:', err);
       setError('保存失败，请稍后重试');
     } finally {
       setLoading(false);
@@ -194,7 +194,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
                 发布
               </label>
               <div className="form-text">
-                取消后学生将看不到此上传要求
+                取消后学生将看不到此作业要求
               </div>
             </div>
           </div>

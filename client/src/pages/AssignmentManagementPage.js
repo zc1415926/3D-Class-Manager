@@ -46,17 +46,9 @@ function AssignmentManagementPage() {
       const response = await axios.get(`/api/assignments/${id}`);
       if (response.data.success) {
         const assignment = response.data.data;
-        if (assignment.submission_count > 0) {
-          // 有作品，显示模态框
-          setSelectedAssignment(assignment);
-          setShowDeleteModal(true);
-        } else {
-          // 没有作品，直接删除
-          if (window.confirm(`确定要删除作业"${name}"吗？`)) {
-            await axios.delete(`/api/assignments/${id}`);
-            fetchAssignments();
-          }
-        }
+        // 始终显示模态框
+        setSelectedAssignment(assignment);
+        setShowDeleteModal(true);
       }
     } catch (err) {
       console.error('检查作业失败:', err);
@@ -117,7 +109,8 @@ function AssignmentManagementPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <div className="text-muted">管理所有作业</div>
+          <h3 className="mb-1">课时管理</h3>
+          <div className="text-muted">管理所有课时</div>
         </div>
         <div>
           <Link to="/assignments/new" className="btn btn-primary">

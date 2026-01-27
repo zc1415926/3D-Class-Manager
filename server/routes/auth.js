@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getDatabase } = require('../models/database');
+const { getDatabase } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 // 用户登录
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -17,70 +17,66 @@ router.post('/login', (req, res) => {
   }
 
   const db = getDatabase();
+  const client = await db.connect();
 
-  db.get(
-    'SELECT * FROM users WHERE username = ?',
-    [username],
-    async (err, user) => {
-      if (err) {
-        console.error('查询用户失败:', err);
-        return res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-      }
+  try {
+    const result = await client.query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
+    );
 
-      if (!user) {
-        return res.status(401).json({ 
-          success: false, 
-          error: '用户名或密码错误' 
-        });
-      }
+    const user = result.rows[0];
 
-      // 验证密码
-      try {
-        const isValidPassword = await bcrypt.compare(password, user.password);
-
-        if (!isValidPassword) {
-          return res.status(401).json({ 
-            success: false, 
-            error: '用户名或密码错误' 
-          });
-        }
-
-        // 生成JWT token
-        const token = jwt.sign(
-          { 
-            id: user.id, 
-            username: user.username, 
-            role: user.role 
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-        );
-
-        res.json({
-          success: true,
-          data: {
-            token,
-            user: {
-              id: user.id,
-              username: user.username,
-              role: user.role
-            }
-          }
-        });
-      } catch (error) {
-        console.error('密码验证失败:', error);
-        res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-      } finally {
-        db.close();
-      }
+    if (!user) {
+      client.release();
+      return res.status(401).json({ 
+        success: false, 
+        error: '用户名或密码错误' 
+      });
     }
-  );
+
+    // 验证密码
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      client.release();
+      return res.status(401).json({ 
+        success: false, 
+        error: '用户名或密码错误' 
+      });
+    }
+
+    // 生成JWT token
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    client.release();
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        }
+      }
+    });
+  } catch (error) {
+    console.error('查询用户失败:', error);
+    client.release();
+    res.status(500).json({ 
+      success: false, 
+      error: '服务器错误' 
+    });
+  }
 });
 
 // 获取当前用户信息
@@ -114,70 +110,58 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   }
 
   const db = getDatabase();
+  const client = await db.connect();
 
-  db.get(
-    'SELECT * FROM users WHERE id = ?',
-    [req.user.id],
-    async (err, user) => {
-      if (err) {
-        console.error('查询用户失败:', err);
-        return res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-      }
+  try {
+    // 查询用户
+    const result = await client.query(
+      'SELECT * FROM users WHERE id = $1',
+      [req.user.id]
+    );
 
-      if (!user) {
-        return res.status(404).json({ 
-          success: false, 
-          error: '用户不存在' 
-        });
-      }
+    const user = result.rows[0];
 
-      try {
-        // 验证当前密码
-        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
-
-        if (!isValidPassword) {
-          return res.status(401).json({ 
-            success: false, 
-            error: '当前密码错误' 
-          });
-        }
-
-        // 加密新密码
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        // 更新密码
-        db.run(
-          'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [hashedPassword, req.user.id],
-          (err) => {
-            if (err) {
-              console.error('更新密码失败:', err);
-              return res.status(500).json({ 
-                success: false, 
-                error: '服务器错误' 
-              });
-            }
-
-            res.json({ 
-              success: true, 
-              message: '密码修改成功' 
-            });
-            db.close();
-          }
-        );
-      } catch (error) {
-        console.error('密码处理失败:', error);
-        res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-        db.close();
-      }
+    if (!user) {
+      client.release();
+      return res.status(404).json({ 
+        success: false, 
+        error: '用户不存在' 
+      });
     }
-  );
+
+    // 验证当前密码
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isValidPassword) {
+      client.release();
+      return res.status(401).json({ 
+        success: false, 
+        error: '当前密码错误' 
+      });
+    }
+
+    // 加密新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 更新密码
+    await client.query(
+      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, req.user.id]
+    );
+
+    client.release();
+    res.json({ 
+      success: true, 
+      message: '密码修改成功' 
+    });
+  } catch (error) {
+    console.error('密码处理失败:', error);
+    client.release();
+    res.status(500).json({ 
+      success: false, 
+      error: '服务器错误' 
+    });
+  }
 });
 
 // 创建用户（仅管理员）
@@ -207,52 +191,46 @@ router.post('/users', authenticateToken, async (req, res) => {
   }
 
   const db = getDatabase();
+  const client = await db.connect();
 
   try {
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.run(
-      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      [username, hashedPassword, role || 'teacher'],
-      function(err) {
-        if (err) {
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(400).json({ 
-              success: false, 
-              error: '用户名已存在' 
-            });
-          }
-          console.error('创建用户失败:', err);
-          return res.status(500).json({ 
-            success: false, 
-            error: '服务器错误' 
-          });
-        }
-
-        res.json({
-          success: true,
-          data: {
-            id: this.lastID,
-            username,
-            role: role || 'teacher'
-          }
-        });
-        db.close();
-      }
+    const result = await client.query(
+      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id',
+      [username, hashedPassword, role || 'teacher']
     );
+
+    client.release();
+    res.json({
+      success: true,
+      data: {
+        id: result.rows[0].id,
+        username,
+        role: role || 'teacher'
+      }
+    });
   } catch (error) {
-    console.error('用户创建失败:', error);
+    console.error('创建用户失败:', error);
+    client.release();
+
+    if (error.code === '23505') { // 唯一约束违反
+      return res.status(400).json({ 
+        success: false, 
+        error: '用户名已存在' 
+      });
+    }
+
     res.status(500).json({ 
       success: false, 
       error: '服务器错误' 
     });
-    db.close();
   }
 });
 
 // 获取用户列表（仅管理员）
-router.get('/users', authenticateToken, (req, res) => {
+router.get('/users', authenticateToken, async (req, res) => {
   // 检查权限
   if (req.user.role !== 'admin') {
     return res.status(403).json({ 
@@ -262,30 +240,30 @@ router.get('/users', authenticateToken, (req, res) => {
   }
 
   const db = getDatabase();
+  const client = await db.connect();
 
-  db.all(
-    'SELECT id, username, role, created_at, updated_at FROM users ORDER BY created_at DESC',
-    [],
-    (err, users) => {
-      if (err) {
-        console.error('查询用户列表失败:', err);
-        return res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-      }
+  try {
+    const result = await client.query(
+      'SELECT id, username, role, created_at, updated_at FROM users ORDER BY created_at DESC'
+    );
 
-      res.json({
-        success: true,
-        data: users
-      });
-      db.close();
-    }
-  );
+    client.release();
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('查询用户列表失败:', error);
+    client.release();
+    res.status(500).json({ 
+      success: false, 
+      error: '服务器错误' 
+    });
+  }
 });
 
 // 删除用户（仅管理员）
-router.delete('/users/:id', authenticateToken, (req, res) => {
+router.delete('/users/:id', authenticateToken, async (req, res) => {
   // 检查权限
   if (req.user.role !== 'admin') {
     return res.status(403).json({ 
@@ -305,33 +283,35 @@ router.delete('/users/:id', authenticateToken, (req, res) => {
   }
 
   const db = getDatabase();
+  const client = await db.connect();
 
-  db.run(
-    'DELETE FROM users WHERE id = ?',
-    [userId],
-    function(err) {
-      if (err) {
-        console.error('删除用户失败:', err);
-        return res.status(500).json({ 
-          success: false, 
-          error: '服务器错误' 
-        });
-      }
+  try {
+    const result = await client.query(
+      'DELETE FROM users WHERE id = $1',
+      [userId]
+    );
 
-      if (this.changes === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          error: '用户不存在' 
-        });
-      }
+    client.release();
 
-      res.json({ 
-        success: true, 
-        message: '用户删除成功' 
+    if (result.rowCount === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: '用户不存在' 
       });
-      db.close();
     }
-  );
+
+    res.json({ 
+      success: true, 
+      message: '用户删除成功' 
+    });
+  } catch (error) {
+    console.error('删除用户失败:', error);
+    client.release();
+    res.status(500).json({ 
+      success: false, 
+      error: '服务器错误' 
+    });
+  }
 });
 
 module.exports = router;

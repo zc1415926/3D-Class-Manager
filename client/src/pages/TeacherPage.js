@@ -78,6 +78,7 @@ function TeacherPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
+          <h3 className="mb-1">作品管理</h3>
           <div className="text-muted">查看和管理所有学生提交的3D作品</div>
         </div>
         <button
@@ -92,7 +93,7 @@ function TeacherPage() {
             </>
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon-tabler icon-tabler-refresh me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                 <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
                 <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
@@ -186,52 +187,46 @@ function TeacherPage() {
                   </div>
                 </div>
                 <div className="card-footer">
-                  <div className="row g-2">
-                    <div className="col-4">
-                      <Link
-                        to={`/viewer/${submission.id}`}
-                        state={{ from: location.pathname }}
-                        className="btn btn-primary w-100"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                          <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                          <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                          <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
-                        </svg>
-                        查看
-                      </Link>
-                    </div>
-                    <div className="col-4">
-                      <button
-                        onClick={() => handleDownload(submission.filename)}
-                        className="btn btn-success w-100"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-                          <path d="M7 11l5 5l5 -5" />
-                          <path d="M12 4l0 12" />
-                        </svg>
-                        下载
-                      </button>
-                    </div>
-                    <div className="col-4">
-                      <button
-                        className="btn btn-outline-danger w-100"
-                        onClick={() => handleDelete(submission.id)}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                          <path d="M4 7l16 0" />
-                          <path d="M10 11l0 6" />
-                          <path d="M14 11l0 6" />
-                          <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                          <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-                        </svg>
-                        删除
-                      </button>
-                    </div>
+                  <div className="d-flex gap-2">
+                    <Link
+                      to={`/viewer/${submission.id}`}
+                      state={{ from: location.pathname }}
+                      className="btn btn-primary flex-fill"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                        <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                        <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                      </svg>
+                      查看
+                    </Link>
+                    <button
+                      onClick={() => handleDownload(submission.filename)}
+                      className="btn btn-success flex-fill"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                        <path d="M7 11l5 5l5 -5" />
+                        <path d="M12 4l0 12" />
+                      </svg>
+                      下载
+                    </button>
+                    <button
+                      className="btn btn-outline-danger"
+                      onClick={() => handleDelete(submission.id)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M4 7l16 0" />
+                        <path d="M10 11l0 6" />
+                        <path d="M14 11l0 6" />
+                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                        <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                      </svg>
+                      删除
+                    </button>
                   </div>
                 </div>
               </div>

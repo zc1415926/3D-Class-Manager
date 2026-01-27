@@ -123,9 +123,17 @@ function ViewerPage() {
   if (error) {
     return (
       <div className="text-center py-5">
-        <div className="display-1 mb-3">❌</div>
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon text-danger mb-3" width="64" height="64" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+          <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+          <path d="M10 10l4 4m0 -4l-4 4" />
+        </svg>
         <h4>{error}</h4>
         <Link to="/teacher" className="btn btn-primary mt-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M15 6l-6 6l6 6" />
+          </svg>
           返回教师页面
         </Link>
       </div>
@@ -137,17 +145,31 @@ function ViewerPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <Link to={getBackPath()} className="btn btn-outline-secondary me-2">
-            ← 返回
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M15 6l-6 6l6 6" />
+            </svg>
+            返回
           </Link>
           <h2 className="d-inline-block align-middle mb-0">
-            🎨 作品详情
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon text-primary me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+              <path d="M7 11l5 5l5 -5" />
+            </svg>
+            作品详情
           </h2>
         </div>
         <button
           className="btn btn-info text-white"
           onClick={() => window.location.reload()}
         >
-          🔄 重新加载
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+          </svg>
+          重新加载
         </button>
       </div>
 
@@ -169,7 +191,15 @@ function ViewerPage() {
           {/* 操作说明 */}
           <div className="card mt-3">
             <div className="card-body">
-              <h5 className="card-title">🎮 操作说明</h5>
+              <h5 className="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-primary me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                  <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                  <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+                </svg>
+                操作说明
+              </h5>
               <ul className="mb-0">
                 <li>鼠标左键拖拽：旋转模型</li>
                 <li>鼠标滚轮：缩放模型</li>
@@ -185,7 +215,15 @@ function ViewerPage() {
         <div className="col-lg-4">
           <div className="card">
             <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">📋 作品信息</h5>
+              <h5 className="mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+                  <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v0z" />
+                  <path d="M9 14l2 2l4 -4" />
+                </svg>
+                作品信息
+              </h5>
             </div>
             <div className="card-body">
               <table className="table table-borderless">
@@ -239,15 +277,29 @@ function ViewerPage() {
                   download={submission.filename}
                   className="btn btn-success w-100"
                 >
-                  📥 下载STL文件
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                    <path d="M7 11l5 5l5 -5" />
+                    <path d="M12 4l0 12" />
+                  </svg>
+                  下载文件
                 </a>
               ) : (
                 <div>
                   <div className="alert alert-info mb-0 text-center">
-                    <small>
-                      👁️ 3D模型已在线预览<br />
-                      <span className="text-muted">登录教师账号以下载文件</span>
-                    </small>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-info mb-2" width="32" height="32" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                      <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                    </svg>
+                    <div>
+                      <small>
+                        3D模型已在线预览<br />
+                        <span className="text-muted">登录教师账号以下载文件</span>
+                      </small>
+                    </div>
                   </div>
                 </div>
               )}

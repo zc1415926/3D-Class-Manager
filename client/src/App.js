@@ -1,8 +1,9 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import TablerLayout from './components/TablerLayout';
+import HomePage from './pages/HomePage';
 import StudentPage from './pages/StudentPage';
 import TeacherPage from './pages/TeacherPage';
 import ViewerPage from './pages/ViewerPage';
@@ -24,7 +25,7 @@ function AppContent() {
   return (
     <TablerLayout>
       <Routes>
-        <Route path="/" element={<StudentPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/submit" element={<StudentPage />} />
         <Route path="/works" element={<TeacherPage />} />
         <Route path="/student-management" element={<StudentManagementPage />} />

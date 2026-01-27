@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { initializeDatabase } = require('./models/database');
+const { initializeDatabase, closeDatabase } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -93,33 +93,57 @@ const ensureDirectories = () => {
 
 ensureDirectories();
 
-// 初始化数据库
-const db = initializeDatabase();
+// 初始化数据库（异步）
+let db;
+async function startServer() {
+  try {
+    db = await initializeDatabase();
+    console.log('数据库初始化完成');
 
-// 路由
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
+    // 路由
+    const authRoutes = require('./routes/auth');
+    app.use('/api/auth', authRoutes);
 
-const submissionRoutes = require('./routes/submissions');
-app.use('/api/submissions', submissionRoutes);
+    const submissionRoutes = require('./routes/submissions');
+    app.use('/api/submissions', submissionRoutes);
 
-const studentRoutes = require('./routes/students');
-app.use('/api/students', studentRoutes);
+    const studentRoutes = require('./routes/students');
+    app.use('/api/students', studentRoutes);
 
-const assignmentRoutes = require('./routes/assignments');
-app.use('/api/assignments', assignmentRoutes);
+    const assignmentRoutes = require('./routes/assignments');
+    app.use('/api/assignments', assignmentRoutes);
 
-const uploadRoutes = require('./routes/upload');
-app.use('/api', uploadRoutes);
+    const uploadRoutes = require('./routes/upload');
+    app.use('/api', uploadRoutes);
 
-const uploadTypesRoutes = require('./routes/upload-types');
-app.use('/api/upload-types', uploadTypesRoutes);
+    const uploadTypesRoutes = require('./routes/upload-types');
+    app.use('/api/upload-types', uploadTypesRoutes);
 
-// 健康检查
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+    // 健康检查
+    app.get('/api/health', (req, res) => {
+      res.json({ status: 'ok', message: 'Server is running' });
+    });
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('服务器启动失败:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+// 优雅关闭处理
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  closeDatabase();
+  process.exit(0);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  closeDatabase();
+  process.exit(0);
 });

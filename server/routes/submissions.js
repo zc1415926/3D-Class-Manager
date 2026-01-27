@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getDatabase } = require('../models/database');
+const { getDatabase } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -40,6 +40,8 @@ const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
+    
+    // 单文件上传字段
     if (file.fieldname === 'stlFile') {
       // 支持STL和OBJ格式
       if (ext !== '.stl' && ext !== '.obj') {
@@ -49,7 +51,23 @@ const upload = multer({
       if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
         return cb(new Error('只允许上传图片文件'));
       }
+    } 
+    // 多文件上传字段
+    else if (file.fieldname.startsWith('files[')) {
+      // 多文件上传，暂时允许所有常见3D和图片格式
+      // 具体验证在后端处理时根据上传类型进行
+      const allowedExts = ['.stl', '.obj', '.gcode', '.vox', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt', '.mp4', '.avi', '.mov', '.mkv'];
+      if (!allowedExts.includes(ext)) {
+        return cb(new Error(`不支持的文件类型: ${ext}`));
+      }
+    } else if (file.fieldname.startsWith('thumbnails[')) {
+      if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg' && ext !== '.gif' && ext !== '.webp') {
+        return cb(new Error('只允许上传图片文件'));
+      }
+    } else {
+      return cb(new Error('未知的文件字段'));
     }
+    
     cb(null, true);
   },
   limits: {
@@ -58,7 +76,7 @@ const upload = multer({
 });
 
 // 提交3D作品（支持多文件上传）
-router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }, { name: 'files' }, { name: 'thumbnails' }]), async (req, res) => {
+router.post('/', upload.any(), async (req, res) => {
   try {
     const { studentName, studentYear, workName, description, assignmentId, requirementIds } = req.body;
 
@@ -67,134 +85,138 @@ router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }, { na
     }
 
     const db = getDatabase();
+    const client = await db.connect();
 
-    // 检查是否是新的多文件上传方式
-    const isMultiFileUpload = req.files.files && req.files.files.length > 0;
+    try {
+      // 分类文件
+      const filesArray = [];
+      const thumbnailsArray = [];
+      const stlFile = [];
+      const thumbnailFile = [];
 
-    let submissionId;
-    let files = [];
-
-    if (isMultiFileUpload) {
-      // 新的多文件上传方式
-      const filesArray = req.files.files;
-      const thumbnailsArray = req.files.thumbnails || [];
-
-      // 创建提交记录（不存储文件信息）
-      const stmt = db.prepare(`
-        INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        studentName,
-        parseInt(studentYear),
-        workName,
-        description || '',
-        assignmentId ? parseInt(assignmentId) : null,
-        function(err) {
-          if (err) {
-            console.error('创建提交记录失败:', err.message);
-            db.close();
-            return res.status(500).json({ success: false, error: '创建提交记录失败' });
+      if (req.files && Array.isArray(req.files)) {
+        req.files.forEach(file => {
+          if (file.fieldname.startsWith('files[')) {
+            const index = parseInt(file.fieldname.match(/\[(\d+)\]/)[1]);
+            filesArray[index] = file;
+          } else if (file.fieldname.startsWith('thumbnails[')) {
+            const index = parseInt(file.fieldname.match(/\[(\d+)\]/)[1]);
+            thumbnailsArray[index] = file;
+          } else if (file.fieldname === 'stlFile') {
+            stlFile.push(file);
+          } else if (file.fieldname === 'thumbnail') {
+            thumbnailFile.push(file);
           }
+        });
+      }
 
-          submissionId = this.lastID;
+      // 检查是否是新的多文件上传方式
+      const isMultiFileUpload = filesArray.filter(f => f).length > 0;
 
-          // 保存每个文件到 submission_files 表
-          filesArray.forEach((file, index) => {
-            const requirementId = requirementIds ? parseInt(requirementIds[index]) : null;
-            const thumbnailFile = thumbnailsArray[index] || null;
+      let submissionId;
+      let files = [];
 
-            const fileStmt = db.prepare(`
-              INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
-              VALUES (?, ?, ?, ?, ?)
-            `);
+      if (isMultiFileUpload) {
+        // 新的多文件上传方式
+        const validFiles = filesArray.filter(f => f);
+        const validThumbnails = thumbnailsArray.filter(f => f);
 
-            fileStmt.run(
+        // 创建提交记录（不存储文件信息）
+        const result = await client.query(
+          `INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [
+            studentName,
+            parseInt(studentYear),
+            workName,
+            description || '',
+            assignmentId ? parseInt(assignmentId) : null
+          ]
+        );
+
+        submissionId = result.rows[0].id;
+
+        // 保存每个文件到 submission_files 表
+        for (let index = 0; index < filesArray.length; index++) {
+          const file = filesArray[index];
+          const requirementId = requirementIds ? parseInt(requirementIds[index]) : null;
+          const thumbnailFile = thumbnailsArray[index] || null;
+
+          const fileResult = await client.query(
+            `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [
               submissionId,
               requirementId,
               file.filename,
               file.path,
               thumbnailFile ? thumbnailFile.path : null
-            );
+            ]
+          );
 
-            files.push({
-              id: this.lastID,
-              requirement_id: requirementId,
-              filename: file.filename,
-              filepath: file.path,
-              thumbnail_path: thumbnailFile ? thumbnailFile.path : null
-            });
-
-            fileStmt.finalize();
+          files.push({
+            id: fileResult.rows[0].id,
+            requirement_id: requirementId,
+            filename: file.filename,
+            filepath: file.path,
+            thumbnail_path: thumbnailFile ? thumbnailFile.path : null
           });
-
-          res.json({
-            success: true,
-            message: '作品提交成功',
-            data: {
-              id: submissionId,
-              studentName,
-              workName,
-              files: files
-            }
-          });
-
-          db.close();
         }
-      );
 
-      stmt.finalize();
-
-    } else {
-      // 旧的单文件上传方式（向后兼容）
-      if (!req.files || !req.files.stlFile) {
-        db.close();
-        return res.status(400).json({ error: '请上传3D模型文件（STL或OBJ格式）' });
-      }
-
-      const stlFile = req.files.stlFile[0];
-      const thumbnailFile = req.files.thumbnail ? req.files.thumbnail[0] : null;
-
-      const stmt = db.prepare(`
-        INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        studentName,
-        parseInt(studentYear),
-        workName,
-        description || '',
-        stlFile.filename,
-        stlFile.path,
-        thumbnailFile ? thumbnailFile.path : null,
-        assignmentId ? parseInt(assignmentId) : null,
-        function(err) {
-          if (err) {
-            console.error('创建提交记录失败:', err.message);
-            db.close();
-            return res.status(500).json({ success: false, error: '创建提交记录失败' });
+        client.release();
+        res.json({
+          success: true,
+          message: '作品提交成功',
+          data: {
+            id: submissionId,
+            studentName,
+            workName,
+            files: files
           }
+        });
 
-          submissionId = this.lastID;
-
-          res.json({
-            success: true,
-            message: '作品提交成功',
-            data: {
-              id: submissionId,
-              studentName,
-              workName,
-              filename: stlFile.filename
-            }
-          });
-
-          db.close();
+      } else {
+        // 旧的单文件上传方式（向后兼容）
+        if (stlFile.length === 0) {
+          client.release();
+          return res.status(400).json({ error: '请上传3D模型文件（STL或OBJ格式）' });
         }
-      );
 
-      stmt.finalize();
+        const mainFile = stlFile[0];
+        const mainThumbnail = thumbnailFile.length > 0 ? thumbnailFile[0] : null;
+
+        const result = await client.query(
+          `INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+          [
+            studentName,
+            parseInt(studentYear),
+            workName,
+            description || '',
+            mainFile.filename,
+            mainFile.path,
+            mainThumbnail ? mainThumbnail.path : null,
+            assignmentId ? parseInt(assignmentId) : null
+          ]
+        );
+
+        submissionId = result.rows[0].id;
+
+        client.release();
+        res.json({
+          success: true,
+          message: '作品提交成功',
+          data: {
+            id: submissionId,
+            studentName,
+            workName,
+            filename: stlFile.filename
+          }
+        });
+      }
+    } catch (error) {
+      client.release();
+      throw error;
     }
   } catch (error) {
     console.error('提交错误:', error);
@@ -203,41 +225,39 @@ router.post('/', upload.fields([{ name: 'stlFile' }, { name: 'thumbnail' }, { na
 });
 
 // 获取所有作品列表
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { studentYear, studentName } = req.query;
     const db = getDatabase();
-    
-    let sql = `
-      SELECT id, student_name, student_year, work_name, description, filename, thumbnail_path, created_at
-      FROM submissions
-    `;
-    const params = [];
-    const conditions = [];
+    const client = await db.connect();
 
-    if (studentYear) {
-      conditions.push('student_year = ?');
-      params.push(parseInt(studentYear));
-    }
+    try {
+      let sql = `
+        SELECT id, student_name, student_year, work_name, description, filename, thumbnail_path, created_at
+        FROM submissions
+      `;
+      const params = [];
+      const conditions = [];
 
-    if (studentName) {
-      conditions.push('student_name = ?');
-      params.push(studentName);
-    }
-
-    if (conditions.length > 0) {
-      sql += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    sql += ' ORDER BY created_at DESC';
-
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        console.error('查询失败:', err);
-        return res.status(500).json({ error: '查询失败' });
+      if (studentYear) {
+        conditions.push(`student_year = ${params.length + 1}`);
+        params.push(parseInt(studentYear));
       }
 
-      const submissions = rows.map(row => ({
+      if (studentName) {
+        conditions.push(`student_name = ${params.length + 1}`);
+        params.push(studentName);
+      }
+
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      sql += ' ORDER BY created_at DESC';
+
+      const result = await client.query(sql, params);
+
+      const submissions = result.rows.map(row => ({
         id: row.id,
         studentName: row.student_name,
         studentYear: row.student_year,
@@ -248,8 +268,12 @@ router.get('/', (req, res) => {
         createdAt: row.created_at
       }));
 
+      client.release();
       res.json({ success: true, data: submissions });
-    });
+    } catch (error) {
+      client.release();
+      throw error;
+    }
   } catch (error) {
     console.error('获取列表失败:', error);
     res.status(500).json({ error: '获取列表失败' });
@@ -257,18 +281,21 @@ router.get('/', (req, res) => {
 });
 
 // 获取单个作品详情
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const db = getDatabase();
-    db.get(`
-      SELECT * FROM submissions WHERE id = ?
-    `, [req.params.id], (err, row) => {
-      if (err) {
-        console.error('查询失败:', err);
-        return res.status(500).json({ error: '查询失败' });
-      }
+    const client = await db.connect();
+
+    try {
+      const result = await client.query(
+        `SELECT * FROM submissions WHERE id = $1`,
+        [req.params.id]
+      );
+
+      const row = result.rows[0];
 
       if (!row) {
+        client.release();
         return res.status(404).json({ error: '作品不存在' });
       }
 
@@ -284,8 +311,12 @@ router.get('/:id', (req, res) => {
         createdAt: row.created_at
       };
 
+      client.release();
       res.json({ success: true, data: submission });
-    });
+    } catch (error) {
+      client.release();
+      throw error;
+    }
   } catch (error) {
     console.error('获取详情失败:', error);
     res.status(500).json({ error: '获取详情失败' });
@@ -293,18 +324,22 @@ router.get('/:id', (req, res) => {
 });
 
 // 删除作品
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    
-    // 先获取作品信息
-    db.get(`SELECT * FROM submissions WHERE id = ?`, [req.params.id], async (err, row) => {
-      if (err) {
-        console.error('查询失败:', err);
-        return res.status(500).json({ error: '查询失败' });
-      }
+    const client = await db.connect();
+
+    try {
+      // 先获取作品信息
+      const result = await client.query(
+        `SELECT * FROM submissions WHERE id = $1`,
+        [req.params.id]
+      );
+
+      const row = result.rows[0];
 
       if (!row) {
+        client.release();
         return res.status(404).json({ error: '作品不存在' });
       }
 
@@ -321,15 +356,14 @@ router.delete('/:id', authenticateToken, (req, res) => {
       }
 
       // 删除数据库记录
-      db.run(`DELETE FROM submissions WHERE id = ?`, [req.params.id], function(delErr) {
-        if (delErr) {
-          console.error('删除记录失败:', delErr);
-          return res.status(500).json({ error: '删除记录失败' });
-        }
+      await client.query(`DELETE FROM submissions WHERE id = $1`, [req.params.id]);
 
-        res.json({ success: true, message: '删除成功' });
-      });
-    });
+      client.release();
+      res.json({ success: true, message: '删除成功' });
+    } catch (error) {
+      client.release();
+      throw error;
+    }
   } catch (error) {
     console.error('删除失败:', error);
     res.status(500).json({ error: '删除失败' });

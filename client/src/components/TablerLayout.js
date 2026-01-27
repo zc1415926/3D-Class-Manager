@@ -27,16 +27,6 @@ const TablerLayout = ({ children }) => {
     },
     ...(isAuthenticated ? [
       {
-        title: '作业管理',
-        path: '/assignments',
-        icon: 'clipboard'
-      },
-      {
-        title: '作品管理',
-        path: '/works',
-        icon: 'list'
-      },
-      {
         title: '教师主页',
         icon: 'user',
         children: [
@@ -46,9 +36,14 @@ const TablerLayout = ({ children }) => {
             icon: 'dashboard'
           },
           {
-            title: '管理作业',
+            title: '课时管理',
             path: '/assignments',
             icon: 'clipboard'
+          },
+          {
+            title: '作品管理',
+            path: '/works',
+            icon: 'list'
           },
           {
             title: '学生管理',
@@ -132,11 +127,11 @@ const TablerLayout = ({ children }) => {
                         </span>
                       </a>
                       <div className={`collapse ${isExpanded ? 'show' : ''}`} id={`submenu-${index}`}>
-                        <ul className="nav nav-submenu">
+                        <ul className="nav nav-submenu" style={{ flexDirection: 'column' }}>
                           {item.children.map((child, childIndex) => (
                             <li className="nav-item" key={childIndex}>
-                              <Link 
-                                className={`nav-link ${isActive(child.path) ? 'active' : ''}`} 
+                              <Link
+                                className={`nav-link ${isActive(child.path) ? 'active' : ''}`}
                                 to={child.path}
                               >
                                 <span className="nav-link-title">{child.title}</span>
@@ -176,31 +171,6 @@ const TablerLayout = ({ children }) => {
 
       {/* 主内容区 */}
       <div className="page-wrapper">
-        {/* 顶部导航栏 */}
-        <header className="navbar navbar-expand-md d-none d-lg-flex d-print-none">
-          <div className="container-xl">
-            <button className="navbar-toggler" type="button" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="navbar-nav flex-row order-md-last">
-              {isAuthenticated && (
-                <div className="nav-item dropdown">
-                  <a href="#" className="nav-link d-flex lh-1 text-reset p-0">
-                    <span className="avatar avatar-sm" style={{backgroundColor: '#206bc4'}}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                      </svg>
-                    </span>
-                  </a>
-                </div>
-              )}
-            </div>
-            <div className="collapse navbar-collapse" id="navbar-menu"></div>
-          </div>
-        </header>
-
         {/* 页面内容 */}
         <div className="page-body">
           <div className="container-xl">

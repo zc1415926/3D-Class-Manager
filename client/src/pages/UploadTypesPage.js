@@ -180,6 +180,7 @@ function UploadTypesPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
+          <h3 className="mb-1">上传类型管理</h3>
           <div className="text-muted">管理作业上传类型</div>
         </div>
         <div>

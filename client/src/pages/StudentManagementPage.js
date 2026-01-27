@@ -112,6 +112,7 @@ function StudentManagementPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
+          <h3 className="mb-1">学生管理</h3>
           <div className="text-muted">管理所有学生信息</div>
         </div>
         <div>

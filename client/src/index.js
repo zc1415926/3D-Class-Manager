@@ -2,12 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '@tabler/core/dist/css/tabler.min.css';
+import '@tabler/core/dist/css/tabler-flags.min.css';
+import '@tabler/core/dist/css/tabler-payments.min.css';
+import '@tabler/core/dist/css/tabler-vendors.min.css';
+import '@tabler/icons-webfont/dist/tabler-icons.min.css';
 import './index.css';
 import App from './App';
-
-// Tabler JS 本地导入
-import '@tabler/core/dist/js/tabler.min';
-import '@tabler/core/dist/js/tabler.esm.min';
 
 // 抑制 WebGL 警告
 const originalWarn = console.warn;

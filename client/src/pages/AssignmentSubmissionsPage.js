@@ -88,6 +88,11 @@ function AssignmentSubmissionsPage() {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+          <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+          <path d="M10 10l4 4m0 -4l-4 4" />
+        </svg>
         {error}
       </div>
     );
@@ -98,10 +103,19 @@ function AssignmentSubmissionsPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <Link to="/assignments" className="btn btn-outline-secondary me-2">
-            ← 返回作业管理
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M15 6l-6 6l6 6" />
+            </svg>
+            返回课时管理
           </Link>
           <h2 className="d-inline-block align-middle mb-0">
-            📝 {assignment?.name || '作业详情'}
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon text-primary me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M9 11l3 3l8 -8" />
+              <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" />
+            </svg>
+            {assignment?.name || '作业详情'}
           </h2>
         </div>
         <div className="text-muted">
