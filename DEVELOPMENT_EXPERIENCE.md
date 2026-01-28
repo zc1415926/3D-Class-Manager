@@ -2,22 +2,23 @@
 
 ## 一、数据库迁移经验
 
-### 1.1 SQLite 到 PostgreSQL 迁移
+### 1.1 PostgreSQL 数据库使用
 
 **关键要点：**
 
 1. **连接管理**
-   - SQLite 使用单个文件，PostgreSQL 需要连接池管理
+   - PostgreSQL 需要连接池管理
    - 使用 `pg` 库创建连接池，配置合理的连接数（默认 20）
    - 生产环境建议使用连接池管理器（如 `pg-pool`）
 
 2. **数据类型映射**
    ```javascript
-   // SQLite → PostgreSQL 类型映射
-   INTEGER → INTEGER (SERIAL for auto-increment)
+   // PostgreSQL 类型映射
+   SERIAL → 自增主键
    TEXT → TEXT or VARCHAR
-   DATETIME → TIMESTAMP
-   BLOB → BYTEA
+   TIMESTAMP → 日期时间
+   INTEGER → 整数
+   BYTEA → 二进制数据
    ```
 
 3. **序列管理**
@@ -47,70 +48,11 @@
    ```
 
 4. **参数化查询**
-   - SQLite 使用 `?` 或 `:name` 占位符
    - PostgreSQL 使用 `$1, $2, ...` 占位符
    ```javascript
-   // SQLite
-   db.run('INSERT INTO users (name) VALUES (?)', ['John']);
-
    // PostgreSQL
    await client.query('INSERT INTO users (name) VALUES ($1)', ['John']);
    ```
-
-### 1.2 数据迁移策略
-
-**分阶段迁移：**
-
-1. **表结构迁移** - 先创建所有表结构
-2. **基础数据迁移** - 迁移不依赖其他表的数据（如 users, students, upload_types）
-3. **关联数据迁移** - 迁移有外键关联的数据（如 assignments, submissions）
-4. **序列重置** - 重置所有自增序列
-5. **数据验证** - 对比源数据和目标数据数量
-
-**迁移脚本模板：**
-```javascript
-const sqlite3 = require('sqlite3').verbose();
-const { Pool } = require('pg');
-
-async function migrate() {
-  // 连接 SQLite
-  const sqliteDb = new sqlite3.Database('./database/stl_manager.db');
-
-  // 连接 PostgreSQL
-  const pool = new Pool({
-    host: process.env.PG_HOST,
-    port: process.env.PG_PORT,
-    database: process.env.PG_DATABASE,
-    user: process.env.PG_USER,
-    password: process.env.PG_PASSWORD
-  });
-
-  try {
-    // 1. 迁移数据
-    const data = await new Promise((resolve, reject) => {
-      sqliteDb.all('SELECT * FROM table_name', (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-
-    // 2. 插入到 PostgreSQL
-    for (const row of data) {
-      await pool.query(
-        'INSERT INTO table_name (col1, col2) VALUES ($1, $2)',
-        [row.col1, row.col2]
-      );
-    }
-
-    // 3. 重置序列
-    await pool.query('SELECT setval(pg_get_serial_sequence($1, $2), (SELECT MAX(id) FROM $1) + 1, false)', ['table_name', 'id']);
-
-  } finally {
-    await pool.end();
-    sqliteDb.close();
-  }
-}
-```
 
 ## 二、文件上传系统重构
 

@@ -1,25 +1,18 @@
-# PostgreSQL 迁移指南
+# PostgreSQL 数据库配置指南
 
 ## 概述
 
-本指南说明如何将3D班级管理系统从SQLite迁移到PostgreSQL数据库。
+本指南说明如何为3D班级管理系统配置PostgreSQL数据库。
 
-## 为什么选择 PostgreSQL？
+### PostgreSQL 的优势
 
-### 相比 SQLite 的优势
-
-1. **并发性能**：支持更高的并发用户访问
-2. **数据完整性**：更强大的事务和约束支持
-3. **扩展性**：支持水平扩展和读写分离
-4. **企业级功能**：支持全文搜索、JSON数据类型、GIS等
-5. **生产就绪**：经过大规模生产环境验证
-
-### 适用场景
-
-- 30个或更多并发用户
-- 需要高可用性和数据备份
-- 需要复杂查询和数据分析
-- 需要实时数据同步
+| 指标 | PostgreSQL |
+|------|------------|
+| 并发支持 | >100连接 |
+| 数据完整性 | 完整约束 |
+| 性能 | 连接池优化 |
+| 扩展性 | 集群部署 |
+| 事务处理 | 完整ACID |
 
 ## 前置要求
 
@@ -88,19 +81,20 @@ PG_PASSWORD=your-secure-password
 # 其他配置保持不变...
 ```
 
-### 3. 迁移数据（如果从 SQLite 迁移）
+### 3. 数据初始化
 
-如果你有现有的 SQLite 数据库数据，使用迁移脚本：
+系统启动时会自动创建所有必要的数据库表和示例数据：
 
 ```bash
 cd server
-node scripts/migrate-to-postgresql.js
+npm run dev
 ```
 
-迁移脚本会：
-- ✅ 迁移所有表的数据
-- ✅ 保留数据关系
-- ✅ 显示迁移进度和统计信息
+系统会自动：
+- ✅ 创建所有数据库表
+- ✅ 添加默认管理员用户
+- ✅ 添加默认上传类型
+- ✅ 添加示例学生数据
 
 ### 4. 启动服务器
 
@@ -326,28 +320,18 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO stlmanager;
 GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO stlmanager;
 ```
 
-## 迁移回 SQLite
 
-如果需要从 PostgreSQL 迁移回 SQLite：
 
-```bash
-# 导出 PostgreSQL 数据
-pg_dump -h localhost -U stlmanager stl_manager > export.sql
+## 性能特性
 
-# 使用转换工具或手动转换为 SQLite 格式
-# 可以使用 https://www.convertsql.com/ 或类似工具
-```
-
-## 性能对比
-
-| 指标 | SQLite | PostgreSQL |
-|------|--------|------------|
-| 并发用户 | < 30 | 100+ |
-| 响应时间 | 10-50ms | 5-20ms |
-| 数据大小 | < 1GB | 无限制 |
-| 备份速度 | 快 | 中等 |
-| 故障恢复 | 简单 | 中等 |
-| 扩展性 | 有限 | 优秀 |
+| 指标 | PostgreSQL |
+|------|------------|
+| 并发用户 | 100+ |
+| 响应时间 | 5-20ms |
+| 数据大小 | 无限制 |
+| 备份速度 | 中等 |
+| 故障恢复 | 中等 |
+| 扩展性 | 优秀 |
 
 ## 生产环境部署
 
@@ -383,12 +367,10 @@ npm install sequelize
 
 ## 总结
 
-迁移到 PostgreSQL 后，系统将获得：
+使用 PostgreSQL 后，系统将获得：
 
 ✅ 更高的并发性能
 ✅ 更好的数据完整性
 ✅ 更强的扩展能力
 ✅ 更丰富的功能支持
 ✅ 更好的生产环境支持
-
-建议在生产环境中使用 PostgreSQL，在开发环境中可以继续使用 SQLite 以简化配置。

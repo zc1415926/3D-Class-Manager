@@ -13,7 +13,7 @@
 
 ### 后端
 - Express.js
-- SQLite
+- PostgreSQL
 - Multer (文件上传)
 - Puppeteer (缩略图渲染)
 
@@ -99,7 +99,6 @@ StlManager/
 ├── server/                # Express后端
 │   ├── uploads/           # STL文件存储
 │   ├── thumbnails/        # 缩略图存储
-│   ├── database/          # SQLite数据库
 │   ├── routes/            # API路由
 │   │   └── submissions.js # 作品相关路由
 │   ├── models/            # 数据模型
@@ -133,7 +132,7 @@ StlManager/
 
 ## 注意事项
 
-1. 首次运行会自动创建SQLite数据库文件
+1. 首次运行会自动连接PostgreSQL数据库并创建表结构
 2. 上传的STL文件会保存在 `server/uploads/` 目录
 3. 生成的缩略图会保存在 `server/thumbnails/` 目录
 4. 文件上传限制为50MB
@@ -149,7 +148,7 @@ StlManager/
 ### 后端开发
 - Express服务器运行在端口5000
 - 使用nodemon实现热重载
-- 数据库自动初始化
+- PostgreSQL数据库自动初始化
 
 ## 生产部署
 

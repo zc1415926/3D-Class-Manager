@@ -2,12 +2,6 @@
 
 ## 快速启动
 
-### 使用默认数据库（SQLite）
-```bash
-cd server
-npm run dev
-```
-
 ### 使用PostgreSQL数据库
 ```bash
 cd server
@@ -30,14 +24,11 @@ cd server
 npm start
 ```
 
-## 数据库切换
+## 数据库配置
 
 ### 1. 编辑 .env 文件
 ```env
-# 使用SQLite（默认）
-DB_TYPE=sqlite
-
-# 或使用PostgreSQL
+# 使用PostgreSQL（当前唯一支持）
 DB_TYPE=postgresql
 PG_HOST=localhost
 PG_PORT=5432
@@ -91,11 +82,6 @@ npm run test:pg
 ```
 
 ## 开发工具
-
-### 迁移数据到PostgreSQL
-```bash
-npm run migrate:pg
-```
 
 ### 测试PostgreSQL连接
 ```bash

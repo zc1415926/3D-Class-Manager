@@ -15,7 +15,7 @@ const path = require('path');
 console.log('🚀 启动开发服务器...\n');
 
 // 检测数据库类型
-const DB_TYPE = process.env.DB_TYPE || 'sqlite';
+const DB_TYPE = process.env.DB_TYPE || 'postgresql';
 
 // 启动PostgreSQL服务（如果使用PostgreSQL）
 if (DB_TYPE === 'postgresql') {
@@ -62,9 +62,7 @@ function startPostgreSQL() {
           console.log('  Linux: sudo systemctl start postgresql');
           console.log('  macOS: brew services start postgresql@16');
           console.log('  Windows: net start postgresql-x64-16\n');
-          console.log('或切换回SQLite数据库:');
-          console.log('  在 .env 文件中设置: DB_TYPE=sqlite\n');
-          process.exit(1);
+                    process.exit(1);
         } else {
           console.log('✅ PostgreSQL 服务已启动\n');
           // 等待服务完全启动
@@ -100,7 +98,7 @@ function testDatabaseConnection() {
         console.log(`  node ${testScript}\n`);
       }
       
-      // 继续启动服务器（可能使用SQLite）
+      
       startServer();
     } else {
       console.log(stdout);
@@ -116,7 +114,7 @@ function testDatabaseConnection() {
 function startServer() {
   console.log('🌐 启动 Express 服务器...');
   console.log(`   端口: ${process.env.PORT || 5000}`);
-  console.log(`   数据库: ${DB_TYPE === 'postgresql' ? 'PostgreSQL' : 'SQLite'}`);
+  console.log(`   数据库: PostgreSQL`);
   console.log(`   环境: ${process.env.NODE_ENV || 'development'}\n`);
   
   // 启动nodemon

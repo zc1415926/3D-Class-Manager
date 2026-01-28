@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-这是一个为小学3D建模课程设计的管理系统，允许学生提交STL/OBJ格式的3D模型文件，教师可以查看、管理和下载这些作品。系统采用前后端分离架构，前端使用React，后端使用Express.js，支持SQLite和PostgreSQL双数据库，具备完整的JWT认证系统和作业管理功能。
+这是一个为小学3D建模课程设计的管理系统，允许学生提交STL/OBJ格式的3D模型文件，教师可以查看、管理和下载这些作品。系统采用前后端分离架构，前端使用React，后端使用Express.js，支持PostgreSQL数据库，具备完整的JWT认证系统和作业管理功能。
 
 ### 核心功能
 - **学生端**：
@@ -24,16 +24,14 @@
   - 用户管理
   - 修改密码功能
 - **数据库支持**：
-  - 支持SQLite（开发环境）
-  - 支持PostgreSQL（生产环境）
-  - 一键切换数据库类型
+  - 支持PostgreSQL（生产环境）  - 一键切换数据库类型
 
 ### 技术栈
 - **前端**：React 18, React Router, Bootstrap 5, Babylon.js, Axios, Tabler UI, CKEditor
-- **后端**：Express.js, SQLite/PostgreSQL, Multer, Babylon.js (缩略图生成)
+- **后端**：Express.js, PostgreSQL, Multer, Babylon.js (缩略图生成)
 - **安全认证**：JWT (jsonwebtoken), bcryptjs, dotenv
 - **文件处理**：STL/OBJ文件上传、缩略图自动生成、ZIP打包导出、多文件动态上传
-- **数据库**：SQLite3, PostgreSQL (pg), 连接池管理
+- **数据库**：PostgreSQL (pg), 连接池管理
 
 ## 项目结构
 
@@ -54,9 +52,8 @@
 │   ├── uploads/           # 文件存储 (STL/OBJ)
 │   │   └── images/        # 图片文件存储
 │   ├── thumbnails/        # 缩略图存储
-│   ├── database/          # 数据库文件（SQLite）
 │   ├── config/            # 配置文件
-│   │   └── database.js    # 数据库配置（支持SQLite/PostgreSQL）
+│   │   └── database.js    # 数据库配置（PostgreSQL）
 │   ├── middleware/        # 中间件 (auth.js - JWT认证)
 │   ├── routes/            # API路由
 │   │   ├── auth.js        # 认证路由（登录、修改密码、用户管理）
@@ -101,14 +98,14 @@ npm run install:all
 ```
 
 ### 数据库配置
-系统支持SQLite（默认）和PostgreSQL数据库，通过环境变量切换：
+系统支持PostgreSQL数据库，通过环境变量配置：
 
 1. **编辑环境变量文件** (`server/.env`)：
 ```env
 # 数据库类型配置
-DB_TYPE=sqlite  # 或 postgresql
+DB_TYPE=postgresql
 
-# PostgreSQL配置（如果使用PostgreSQL）
+# PostgreSQL配置
 PG_HOST=localhost
 PG_PORT=5432
 PG_DATABASE=stl_manager
@@ -121,7 +118,7 @@ PG_PASSWORD=your-password
 # 创建数据库
 sudo -u postgres psql -c "CREATE DATABASE stl_manager;"
 
-# 或使用迁移脚本（如果从SQLite迁移）
+
 cd server
 npm run migrate:pg
 ```
@@ -217,91 +214,90 @@ tail -f server/server.log
 
 ## 数据库设计
 
-系统支持SQLite和PostgreSQL两种数据库，表结构自动适配。以下是通用表结构设计：
+系统支持PostgreSQL数据库。以下是数据库表结构设计：
 
 ### 数据库类型映射
-| SQLite 数据类型 | PostgreSQL 数据类型 | 说明 |
-|----------------|-------------------|------|
-| INTEGER PRIMARY KEY AUTOINCREMENT | SERIAL PRIMARY KEY | 自增主键 |
-| TEXT | VARCHAR(n) 或 TEXT | 文本类型 |
-| DATETIME | TIMESTAMP | 日期时间 |
-| INTEGER | INTEGER | 整数 |
-| BLOB | BYTEA | 二进制数据 |
-| FOREIGN KEY | FOREIGN KEY | 外键约束 |
-| ON DELETE CASCADE | ON DELETE CASCADE | 级联删除 |
+| PostgreSQL 数据类型 | 说明 |
+|-------------------|------|
+| SERIAL PRIMARY KEY | 自增主键 |
+| VARCHAR(n) 或 TEXT | 文本类型 |
+| TIMESTAMP | 日期时间 |
+| INTEGER | 整数 |
+| BYTEA | 二进制数据 |
+| FOREIGN KEY | 外键约束 |
+| ON DELETE CASCADE | 级联删除 |
 
 ### 默认数据库配置
-- **SQLite**：`server/database/stl_manager.db`（开发环境默认）
 - **PostgreSQL**：通过环境变量配置（生产环境推荐）
 
 ### users表 (用户认证)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
-- username: TEXT NOT NULL UNIQUE (SQLite) / VARCHAR(50) NOT NULL UNIQUE (PostgreSQL)
-- password: TEXT NOT NULL (bcrypt加密) / VARCHAR(255) NOT NULL (PostgreSQL)
-- role: TEXT DEFAULT 'teacher' (teacher/admin) / VARCHAR(20) DEFAULT 'teacher' (PostgreSQL)
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
-- updated_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- id: SERIAL PRIMARY KEY
+- username: VARCHAR(50) NOT NULL UNIQUE
+- password: VARCHAR(255) NOT NULL (bcrypt加密)
+- role: VARCHAR(20) DEFAULT 'teacher' (teacher/admin)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- updated_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### submissions表 (作品提交)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
-- student_name: TEXT NOT NULL (SQLite) / VARCHAR(100) NOT NULL (PostgreSQL)
+- id: SERIAL PRIMARY KEY
+- student_name: VARCHAR(100) NOT NULL
 - student_year: INTEGER NOT NULL
-- work_name: TEXT NOT NULL (SQLite) / VARCHAR(200) NOT NULL (PostgreSQL)
+- work_name: VARCHAR(200) NOT NULL
 - description: TEXT
-- filename: TEXT NOT NULL (SQLite) / VARCHAR(255) NOT NULL (PostgreSQL)
-- filepath: TEXT NOT NULL (SQLite) / VARCHAR(500) NOT NULL (PostgreSQL)
-- thumbnail_path: TEXT (SQLite) / VARCHAR(500) (PostgreSQL)
+- filename: VARCHAR(255) NOT NULL
+- filepath: VARCHAR(500) NOT NULL
+- thumbnail_path: VARCHAR(500)
 - assignment_id: INTEGER (外键)
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### submission_files表 (多文件支持)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
+- id: SERIAL PRIMARY KEY
 - submission_id: INTEGER NOT NULL (外键)
 - requirement_id: INTEGER (外键)
-- filename: TEXT NOT NULL (SQLite) / VARCHAR(255) NOT NULL (PostgreSQL)
-- filepath: TEXT NOT NULL (SQLite) / VARCHAR(500) NOT NULL (PostgreSQL)
-- thumbnail_path: TEXT (SQLite) / VARCHAR(500) (PostgreSQL)
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- filename: VARCHAR(255) NOT NULL
+- filepath: VARCHAR(500) NOT NULL
+- thumbnail_path: VARCHAR(500)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - 外键约束: FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
 
 ### students表 (学生信息)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
-- name: TEXT NOT NULL (SQLite) / VARCHAR(100) NOT NULL (PostgreSQL)
+- id: SERIAL PRIMARY KEY
+- name: VARCHAR(100) NOT NULL
 - year: INTEGER NOT NULL
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### assignments表 (作业管理)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
+- id: SERIAL PRIMARY KEY
 - year: INTEGER NOT NULL
-- name: TEXT NOT NULL (SQLite) / VARCHAR(200) NOT NULL (PostgreSQL)
+- name: VARCHAR(200) NOT NULL
 - upload_types: TEXT NOT NULL (JSON数组)
 - description: TEXT
-- deadline: DATETIME (SQLite) / TIMESTAMP (PostgreSQL)
-- status: TEXT DEFAULT 'active' (SQLite) / VARCHAR(20) DEFAULT 'active' (PostgreSQL)
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
-- updated_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- deadline: TIMESTAMP
+- status: VARCHAR(20) DEFAULT 'active'
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- updated_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### assignment_upload_requirements表 (作业上传要求)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
+- id: SERIAL PRIMARY KEY
 - assignment_id: INTEGER NOT NULL (外键)
-- name: TEXT NOT NULL (SQLite) / VARCHAR(200) NOT NULL (PostgreSQL)
-- upload_type: TEXT NOT NULL (SQLite) / VARCHAR(50) NOT NULL (PostgreSQL)
-- is_required: INTEGER DEFAULT 1 (SQLite) / BOOLEAN DEFAULT TRUE (PostgreSQL)
-- is_published: INTEGER DEFAULT 1 (SQLite) / BOOLEAN DEFAULT TRUE (PostgreSQL)
+- name: VARCHAR(200) NOT NULL
+- upload_type: VARCHAR(50) NOT NULL
+- is_required: BOOLEAN DEFAULT TRUE
+- is_published: BOOLEAN DEFAULT TRUE
 - sort_order: INTEGER DEFAULT 0
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - 外键约束: FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
 
 ### upload_types表 (上传类型管理)
-- id: INTEGER PRIMARY KEY AUTOINCREMENT (SQLite) / SERIAL PRIMARY KEY (PostgreSQL)
-- name: TEXT NOT NULL UNIQUE (SQLite) / VARCHAR(100) NOT NULL UNIQUE (PostgreSQL)
-- code: TEXT NOT NULL UNIQUE (SQLite) / VARCHAR(50) NOT NULL UNIQUE (PostgreSQL)
+- id: SERIAL PRIMARY KEY
+- name: VARCHAR(100) NOT NULL UNIQUE
+- code: VARCHAR(50) NOT NULL UNIQUE
 - description: TEXT
-- icon: TEXT (SQLite) / VARCHAR(50) (PostgreSQL)
+- icon: VARCHAR(50)
 - extensions: TEXT (逗号分隔)
-- is_active: INTEGER DEFAULT 1 (SQLite) / BOOLEAN DEFAULT TRUE (PostgreSQL)
+- is_active: BOOLEAN DEFAULT TRUE
 - sort_order: INTEGER DEFAULT 0
-- created_at: DATETIME DEFAULT CURRENT_TIMESTAMP (SQLite) / TIMESTAMP DEFAULT CURRENT_TIMESTAMP (PostgreSQL)
+- created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ## 开发和部署
 
@@ -309,7 +305,6 @@ tail -f server/server.log
 - **前端**：使用Create React App，支持热重载、ESLint代码检查
 - **后端**：使用nodemon实现热重载，自动重启服务
 - **数据库**：
-  - 支持SQLite（开发环境默认）
   - 支持PostgreSQL（生产环境推荐）
   - 首次运行自动创建数据库和示例数据
 - **文件上传**：
@@ -416,12 +411,10 @@ tail -f server/server.log
 ## 注意事项
 
 ### 数据库相关
-1. **双数据库支持**：系统支持SQLite（开发环境）和PostgreSQL（生产环境），通过环境变量 `DB_TYPE` 切换
+1. **PostgreSQL支持**：系统支持PostgreSQL数据库，通过环境变量 `DB_TYPE` 配置
 2. **并发性能**：
-   - SQLite：适合<20并发用户，简单部署
    - PostgreSQL：适合100+并发用户，生产环境推荐
-3. **数据迁移**：从SQLite迁移到PostgreSQL时，使用 `npm run migrate:pg` 命令
-4. **连接池管理**：PostgreSQL使用连接池（默认20连接），避免连接泄漏
+3. **连接池管理**：PostgreSQL使用连接池（默认20连接），避免连接泄漏
 
 ### 文件处理
 5. **文件类型支持**：支持STL、OBJ、图片（JPG/PNG/GIF）、文档（PDF/DOC/TXT）、视频（MP4/AVI/MOV）等多种格式
@@ -452,8 +445,7 @@ tail -f server/server.log
 ### 已实现的功能
 1. **PostgreSQL支持**：系统已支持PostgreSQL数据库，适合生产环境部署
 2. **动态多文件上传**：已实现根据作业要求动态上传多个文件
-3. **双数据库架构**：支持SQLite（开发）和PostgreSQL（生产）一键切换
-4. **完整的认证系统**：JWT认证、角色管理、密码加密已实现
+3. **完整的认证系统**：JWT认证、角色管理、密码加密已实现
 
 ### 未来扩展建议
 5. **云存储集成**：集成AWS S3、阿里云OSS等云存储服务，减轻服务器存储压力
