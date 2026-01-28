@@ -178,9 +178,13 @@ function AssignmentManagementPage() {
                         ))}
                       </td>
                       <td>
+                        <span dangerouslySetInnerHTML={{ __html: getStatusBadge(assignment.status) }} />
+                      </td>
+                      <td>
                         <Link to={`/assignments/${assignment.id}/submissions`} className="badge badge-outline text-primary">
-                                                {assignment.submission_count || 0}
-                                              </Link>                      </td>
+                          {assignment.submission_count || 0}
+                        </Link>
+                      </td>
                       <td>
                         <div className="btn-list flex-nowrap">
                           <Link 
