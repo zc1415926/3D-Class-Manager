@@ -44,8 +44,8 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
         setUploadTypes(response.data.data);
       }
     } catch (err) {
-      console.error('获取上传类型失败:', err);
-      // 如果获取失败，使用默认的上传类型
+      console.error('获取作业类型失败:', err);
+      // 如果获取失败，使用默认的作业类型
       setUploadTypes([
         { code: 'stl', name: 'STL模型' },
         { code: 'obj', name: 'OBJ模型' },
@@ -117,7 +117,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
         <div className="modal-body">
           <div className="mb-3">
             <label className="form-label">
-              上传名称 <span className="text-danger">*</span>
+              作业名称 <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -135,7 +135,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
 
           <div className="mb-3">
             <label className="form-label">
-              上传类型 <span className="text-danger">*</span>
+              作业类型 <span className="text-danger">*</span>
             </label>
             {fetchingTypes ? (
               <div className="spinner-border spinner-border-sm me-2" role="status">
@@ -157,7 +157,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
               </select>
             )}
             <div className="form-text">
-              从上传类型管理中添加的类型会显示在这里
+              从作业类型管理中添加的类型会显示在这里
             </div>
           </div>
 

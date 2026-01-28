@@ -135,7 +135,7 @@ function AssignmentViewPage() {
               </div>
 
               <div className="mb-4">
-                <h6 className="text-muted text-uppercase mb-2">上传类型</h6>
+                <h6 className="text-muted text-uppercase mb-2">作业类型</h6>
                 <div>
                   {assignment.upload_types.map((type, index) => (
                     <span key={index} className="badge bg-info text-dark me-1">
@@ -203,7 +203,7 @@ function AssignmentViewPage() {
                 <div className="list-group-item">
                   <div className="row align-items-center">
                     <div className="col-auto">
-                      <span className="text-muted">上传类型</span>
+                      <span className="text-muted">作业类型</span>
                     </div>
                     <div className="col text-end">
                       <span className="badge bg-info text-dark">{assignment.upload_types.length}</span>

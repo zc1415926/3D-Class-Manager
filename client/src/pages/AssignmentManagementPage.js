@@ -156,7 +156,7 @@ function AssignmentManagementPage() {
                   <tr>
                     <th>年份</th>
                     <th>作业名称</th>
-                    <th>上传类型</th>
+                    <th>作业类型</th>
                     <th>截止日期</th>
                     <th>状态</th>
                     <th>提交数</th>

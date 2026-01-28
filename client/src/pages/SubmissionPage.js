@@ -60,7 +60,7 @@ function SubmissionPage() {
         setUploadTypes(response.data.data);
       }
     } catch (err) {
-      console.error('获取上传类型失败:', err);
+      console.error('获取作业类型失败:', err);
     }
   };
 

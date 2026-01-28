@@ -237,8 +237,8 @@ function TeacherDashboard() {
                 </svg>
               </div>
               <div className="col text-truncate">
-                <span className="text-reset d-block">上传类型管理</span>
-                <div className="d-block text-muted text-truncate mt-n1">管理作业上传类型（STL、OBJ、图片等）</div>
+                <span className="text-reset d-block">作业类型管理</span>
+                <div className="d-block text-muted text-truncate mt-n1">管理作业类型（STL、OBJ、图片等）</div>
               </div>
               <div className="col-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
