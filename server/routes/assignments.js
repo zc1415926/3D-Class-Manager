@@ -115,6 +115,40 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// 批量更新作业排序
+router.put('/reorder', authenticateToken, async (req, res) => {
+  const db = getDatabase();
+  const client = await db.connect();
+  const { assignments } = req.body; // [{id: 1, sort_order: 0}, {id: 2, sort_order: 1}, ...]
+
+  if (!Array.isArray(assignments)) {
+    client.release();
+    return res.status(400).json({ success: false, error: '无效的数据格式' });
+  }
+
+  try {
+    // 使用事务批量更新
+    await client.query('BEGIN');
+
+    for (const assignment of assignments) {
+      await client.query(
+        'UPDATE assignments SET sort_order = $1 WHERE id = $2',
+        [assignment.sort_order, assignment.id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    client.release();
+    res.json({ success: true, message: '排序已更新' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('批量更新作业排序失败:', error);
+    client.release();
+    res.status(500).json({ success: false, error: '批量更新作业排序失败' });
+  }
+});
+
 // 更新作业
 router.put('/:id', authenticateToken, async (req, res) => {
   const db = getDatabase();
@@ -160,6 +194,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, error: '更新作业失败' });
   }
 });
+
+
 
 // 删除作业
 router.delete('/:id', authenticateToken, async (req, res) => {
@@ -529,40 +565,6 @@ router.delete('/:id/upload-requirements/:requirementId', authenticateToken, asyn
     console.error('删除作业要求失败:', error);
     client.release();
     res.status(500).json({ success: false, error: '删除作业要求失败' });
-  }
-});
-
-// 批量更新作业排序
-router.put('/reorder', authenticateToken, async (req, res) => {
-  const db = getDatabase();
-  const client = await db.connect();
-  const { assignments } = req.body; // [{id: 1, sort_order: 0}, {id: 2, sort_order: 1}, ...]
-
-  if (!Array.isArray(assignments)) {
-    client.release();
-    return res.status(400).json({ success: false, error: '无效的数据格式' });
-  }
-
-  try {
-    // 使用事务批量更新
-    await client.query('BEGIN');
-
-    for (const assignment of assignments) {
-      await client.query(
-        'UPDATE assignments SET sort_order = $1 WHERE id = $2',
-        [assignment.sort_order, assignment.id]
-      );
-    }
-
-    await client.query('COMMIT');
-
-    client.release();
-    res.json({ success: true, message: '排序已更新' });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('批量更新作业排序失败:', error);
-    client.release();
-    res.status(500).json({ success: false, error: '批量更新作业排序失败' });
   }
 });
 
