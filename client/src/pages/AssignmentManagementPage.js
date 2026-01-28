@@ -65,11 +65,63 @@ function AssignmentManagementPage() {
     fetchAssignments();
   };
 
-    const getStatusBadge = (status) => {
-      return status === 'active'
-        ? '<span class="badge bg-success-lt">进行中</span>'
-        : '<span class="badge bg-secondary-lt">已归档</span>';
-    };
+  // 处理作业上移
+  const handleMoveUp = async (index) => {
+    if (index <= 0) return; // 已经在顶部，不能上移
+    
+    const currentAssignment = assignments[index];
+    const prevAssignment = assignments[index - 1];
+    
+    try {
+      // 交换两个作业的排序
+      await axios.put('/api/assignments/reorder', {
+        assignments: [
+          { id: currentAssignment.id, sort_order: index - 1 },
+          { id: prevAssignment.id, sort_order: index }
+        ]
+      });
+      
+      // 更新本地状态
+      const newAssignments = [...assignments];
+      [newAssignments[index], newAssignments[index - 1]] = [newAssignments[index - 1], newAssignments[index]];
+      setAssignments(newAssignments);
+    } catch (err) {
+      console.error('移动作业失败:', err);
+      alert('移动作业失败，请稍后重试');
+    }
+  };
+
+  // 处理作业下移
+  const handleMoveDown = async (index) => {
+    if (index >= assignments.length - 1) return; // 已经在底部，不能下移
+    
+    const currentAssignment = assignments[index];
+    const nextAssignment = assignments[index + 1];
+    
+    try {
+      // 交换两个作业的排序
+      await axios.put('/api/assignments/reorder', {
+        assignments: [
+          { id: currentAssignment.id, sort_order: index + 1 },
+          { id: nextAssignment.id, sort_order: index }
+        ]
+      });
+      
+      // 更新本地状态
+      const newAssignments = [...assignments];
+      [newAssignments[index], newAssignments[index + 1]] = [newAssignments[index + 1], newAssignments[index]];
+      setAssignments(newAssignments);
+    } catch (err) {
+      console.error('移动作业失败:', err);
+      alert('移动作业失败，请稍后重试');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    return status === 'active'
+      ? '<span class="badge bg-success-lt">进行中</span>'
+      : '<span class="badge bg-secondary-lt">已归档</span>';
+  };
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -153,6 +205,7 @@ function AssignmentManagementPage() {
               <table className="table table-vcenter card-table">
                 <thead>
                   <tr>
+                    <th>排序</th>
                     <th>年份</th>
                     <th>作业名称</th>
                     <th>作业类型</th>
@@ -162,8 +215,43 @@ function AssignmentManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {assignments.map((assignment) => (
+                  {assignments.map((assignment, index) => (
                     <tr key={assignment.id}>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <span className="badge bg-secondary me-2">{index + 1}</span>
+                          <div className="d-flex gap-1">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleMoveUp(index)}
+                              disabled={index === 0}
+                              title="上移"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-up" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12 5l0 14" />
+                                <path d="M18 11l-6 -6" />
+                                <path d="M6 11l6 -6" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleMoveDown(index)}
+                              disabled={index === assignments.length - 1}
+                              title="下移"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-down" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12 5l0 14" />
+                                <path d="M18 13l-6 6" />
+                                <path d="M6 13l6 6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td>{assignment.year}</td>
                       <td>
                         <Link to={`/assignments/${assignment.id}/edit`} className="text-reset">
@@ -171,8 +259,8 @@ function AssignmentManagementPage() {
                         </Link>
                       </td>
                       <td>
-                        {assignment.upload_types.map((type, index) => (
-                          <span key={index} className="badge bg-info-lt me-1">
+                        {assignment.upload_types.map((type, typeIndex) => (
+                          <span key={typeIndex} className="badge bg-info-lt me-1">
                             {type.toUpperCase()}
                           </span>
                         ))}

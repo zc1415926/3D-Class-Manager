@@ -57,10 +57,31 @@ const createPostgreSQLTables = async (client) => {
         description TEXT,
         deadline TIMESTAMP,
         status VARCHAR(20) DEFAULT 'active',
+        sort_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 检查并添加 sort_order 字段（如果不存在）
+    try {
+      const columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='assignments' AND column_name='sort_order'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        // 添加 sort_order 列
+        await client.query(`
+          ALTER TABLE assignments 
+          ADD COLUMN sort_order INTEGER DEFAULT 0
+        `);
+        console.log('已添加sort_order字段到assignments表');
+      }
+    } catch (error) {
+      console.error('检查或添加sort_order字段时出错:', error);
+    }
 
     // 创建submission_files表
     await client.query(`
