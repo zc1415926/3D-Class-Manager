@@ -109,7 +109,7 @@ function StudentPage() {
                                 <div className="text-muted">{student.year} 年级</div>
                               </div>
                               <div className="col-auto">
-                                <span className="badge bg-success">已注册</span>
+                                <span className="badge bg-success-lt">已注册</span>
                               </div>
                             </div>
                           </div>
@@ -140,7 +140,7 @@ function StudentPage() {
                                 <div className="text-body">{assignment.name}</div>
                               </div>
                               <div className="col-auto">
-                                <span className="badge bg-blue">进行中</span>
+                                <span className="badge bg-blue-lt">进行中</span>
                               </div>
                             </div>
                           </div>

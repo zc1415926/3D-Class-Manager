@@ -171,7 +171,7 @@ function TeacherPage() {
                       <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                     </svg>
                     <span className="text-muted">{submission.studentName}</span>
-                    <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
+                    <span className="badge bg-info-lt ms-2">{submission.studentYear}</span>
                   </div>
                   <div className="d-flex align-items-center text-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">

@@ -137,7 +137,7 @@ function AssignmentSubmissionsPage() {
                   <td className="fw-bold">允许的文件类型:</td>
                   <td>
                     {assignment.upload_types.map((type, index) => (
-                      <span key={index} className="badge bg-info text-dark me-1">
+                      <span key={index} className="badge bg-info-lt me-1">
                         {type.toUpperCase()}
                       </span>
                     ))}
@@ -216,7 +216,7 @@ function AssignmentSubmissionsPage() {
                       <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                     </svg>
                     <span className="text-muted">{submission.studentName}</span>
-                    <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
+                    <span className="badge bg-info-lt ms-2">{submission.studentYear}</span>
                   </div>
                   {submission.description && (
                     <p className="card-text text-muted">{submission.description}</p>

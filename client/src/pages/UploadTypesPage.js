@@ -252,7 +252,7 @@ function UploadTypesPage() {
                         {type.extensions && type.extensions.length > 0 ? (
                           <div className="d-flex flex-wrap gap-1">
                             {type.extensions.map((ext, idx) => (
-                              <span key={idx} className="badge bg-info text-dark">
+                              <span key={idx} className="badge bg-info-lt">
                                 {ext}
                               </span>
                             ))}

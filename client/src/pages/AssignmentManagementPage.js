@@ -65,12 +65,11 @@ function AssignmentManagementPage() {
     fetchAssignments();
   };
 
-  const getStatusBadge = (status) => {
-    return status === 'active' 
-      ? '<span class="badge bg-success">进行中</span>'
-      : '<span class="badge bg-secondary">已归档</span>';
-  };
-
+    const getStatusBadge = (status) => {
+      return status === 'active'
+        ? '<span class="badge bg-success-lt">进行中</span>'
+        : '<span class="badge bg-secondary-lt">已归档</span>';
+    };
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -173,16 +172,15 @@ function AssignmentManagementPage() {
                       </td>
                       <td>
                         {assignment.upload_types.map((type, index) => (
-                          <span key={index} className="badge bg-info text-dark me-1">
+                          <span key={index} className="badge bg-info-lt me-1">
                             {type.toUpperCase()}
                           </span>
                         ))}
                       </td>
                       <td>
-                        <Link to={`/assignments/${assignment.id}/submissions`} className="badge bg-primary">
-                          {assignment.submission_count || 0}
-                        </Link>
-                      </td>
+                        <Link to={`/assignments/${assignment.id}/submissions`} className="badge badge-outline text-primary">
+                                                {assignment.submission_count || 0}
+                                              </Link>                      </td>
                       <td>
                         <div className="btn-list flex-nowrap">
                           <Link 

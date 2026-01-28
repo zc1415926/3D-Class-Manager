@@ -81,8 +81,7 @@ function HomePage() {
       <div className="row g-10 align-items-center py-5">
         <div className="col-lg-6 text-center text-lg-start">
           <div className="mb-3">
-            <span className="badge bg-primary-lt">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <span className="badge bg-blue-lt">              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                 <path d="M5 12l5 5l10 -10" />
               </svg>
@@ -269,7 +268,7 @@ function HomePage() {
                     <div key={assignment.id} className="list-group-item">
                       <div className="row align-items-center">
                         <div className="col-auto">
-                          <span className="badge bg-primary fs-4">
+                          <span className="badge bg-primary-lt fs-4">
                             {index + 1}
                           </span>
                         </div>
@@ -283,7 +282,7 @@ function HomePage() {
                             </div>
                           </Link>
                           <div className="d-flex gap-2 mt-2">
-                            <span className="badge bg-blue-lt">
+                            <span className="badge badge-primary">
                               <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" width="14" height="14" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                 <path d="M14 3v4a1 1 0 0 0 1 1h4" />

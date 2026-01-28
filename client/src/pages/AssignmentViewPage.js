@@ -35,12 +35,11 @@ function AssignmentViewPage() {
     fetchAssignment();
   }, [fetchAssignment]);
 
-  const getStatusBadge = (status) => {
-    return status === 'active' 
-      ? '<span class="badge bg-success">进行中</span>'
-      : '<span class="badge bg-secondary">已归档</span>';
-  };
-
+    const getStatusBadge = (status) => {
+      return status === 'active'
+        ? '<span class="badge bg-success-lt">进行中</span>'
+        : '<span class="badge bg-secondary-lt">已归档</span>';
+    };
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -112,7 +111,7 @@ function AssignmentViewPage() {
                 <div>
                   <h3 className="card-title mb-2">{assignment.name}</h3>
                   <div className="text-muted">
-                    <span className="badge bg-secondary me-2">{assignment.year}</span>
+                    <span className="badge bg-secondary-lt me-2">{assignment.year}</span>
                     <span dangerouslySetInnerHTML={{ __html: getStatusBadge(assignment.status) }} />
                   </div>
                 </div>
@@ -138,7 +137,7 @@ function AssignmentViewPage() {
                 <h6 className="text-muted text-uppercase mb-2">作业类型</h6>
                 <div>
                   {assignment.upload_types.map((type, index) => (
-                    <span key={index} className="badge bg-info text-dark me-1">
+                    <span key={index} className="badge bg-info-lt me-1">
                       {type.toUpperCase()}
                     </span>
                   ))}
@@ -187,7 +186,7 @@ function AssignmentViewPage() {
                       <span className="text-muted">提交数量</span>
                     </div>
                     <div className="col text-end">
-                      <span className="badge bg-primary">{assignment.submission_count || 0}</span>
+                      <span className="badge badge-outline text-primary">{assignment.submission_count || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -197,7 +196,7 @@ function AssignmentViewPage() {
                       <span className="text-muted">作业类型</span>
                     </div>
                     <div className="col text-end">
-                      <span className="badge bg-info text-dark">{assignment.upload_types.length}</span>
+                      <span className="badge bg-info-lt">{assignment.upload_types.length}</span>
                     </div>
                   </div>
                 </div>

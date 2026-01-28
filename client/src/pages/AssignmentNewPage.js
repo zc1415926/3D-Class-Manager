@@ -283,13 +283,13 @@ function AssignmentNewPage() {
                         <div key={req.id} className="list-group-item d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center flex-grow-1">
                             <div className="me-3">
-                              <span className="badge bg-secondary me-2">{index + 1}</span>
+                              <span className="badge bg-secondary-lt me-2">{index + 1}</span>
                             </div>
                             <div className="flex-grow-1">
                               <div className="fw-medium">
                                 {req.name}
-                                {req.is_required && <span className="badge bg-danger ms-2">必填</span>}
-                                {!req.is_published && <span className="badge bg-warning ms-2">未发布</span>}
+                                {req.is_required && <span className="badge bg-danger-lt ms-2">必填</span>}
+                                {!req.is_published && <span className="badge bg-warning-lt ms-2">未发布</span>}
                               </div>
                               <div className="text-muted small">
                                 类型: {req.upload_type.toUpperCase()}

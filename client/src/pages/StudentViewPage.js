@@ -274,7 +274,7 @@ function StudentViewPage() {
                         <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                       </svg>
                       <span className="text-muted">{submission.studentName}</span>
-                      <span className="badge bg-info text-dark ms-2">{submission.studentYear}</span>
+                      <span className="badge bg-info-lt ms-2">{submission.studentYear}</span>
                     </div>
                     {submission.description && (
                       <p className="card-text text-muted">{submission.description}</p>

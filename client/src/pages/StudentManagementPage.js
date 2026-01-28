@@ -206,7 +206,7 @@ function StudentManagementPage() {
                         </div>
                       </td>
                       <td>
-                        <span className="badge bg-info text-dark">{student.year}</span>
+                        <span className="badge bg-info-lt">{student.year}</span>
                       </td>
                       <td className="text-muted">
                         {new Date(student.createdAt).toLocaleString('zh-CN')}

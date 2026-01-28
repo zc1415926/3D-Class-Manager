@@ -515,7 +515,7 @@ function SubmissionPage() {
                           <div className="form-text">
                             <strong>允许的文件类型：</strong>
                             {currentAssignment.upload_types.map((type, index) => (
-                              <span key={index} className="badge bg-info text-dark ms-1">
+                              <span key={index} className="badge bg-info-lt ms-1">
                                 {type.toUpperCase()}
                               </span>
                             ))}
@@ -574,7 +574,7 @@ function SubmissionPage() {
                                         {requirement.is_required && <span className="text-danger">*</span>}
                                         {index + 1}. {requirement.name}
                                       </span>
-                                      <span className="badge bg-info text-dark ms-auto">
+                                      <span className="badge bg-info-lt ms-auto">
                                         {requirement.upload_type.toUpperCase()}
                                       </span>
                                     </button>

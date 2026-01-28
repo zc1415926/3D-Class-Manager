@@ -71,8 +71,8 @@ function AssignmentDeleteModal({ show, assignment, onClose, onDelete, onExport }
 
   const getStatusBadge = (status) => {
     return status === 'active'
-      ? '<span class="badge bg-success">进行中</span>'
-      : '<span class="badge bg-secondary">已归档</span>';
+      ? '<span class="badge bg-success-lt">进行中</span>'
+      : '<span class="badge bg-secondary-lt">已归档</span>';
   };
 
   return (
