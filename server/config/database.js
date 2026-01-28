@@ -294,6 +294,60 @@ const initializeSQLite = () => {
         console.error('创建assignments表失败:', err.message);
       } else {
         console.log('assignments表已就绪');
+      
+      // 检查并删除deadline列（如果存在）
+      db.get("PRAGMA table_info(assignments)", [], (err, rows) => {
+        if (!err) {
+          const hasDeadline = rows.some(col => col.name === "deadline");
+          if (hasDeadline) {
+            console.log("正在移除assignments表中的deadline列...");
+            
+            // 创建新表结构（不含deadline列）
+            db.run(`CREATE TABLE assignments_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              year INTEGER NOT NULL,
+              name TEXT NOT NULL,
+              upload_types TEXT NOT NULL,
+              description TEXT,
+              status TEXT DEFAULT "active",
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+              if (err) {
+                console.error("创建新assignments表失败:", err.message);
+                return;
+              }
+              
+              // 复制数据
+              db.run(`INSERT INTO assignments_new (
+                id, year, name, upload_types, description, status, created_at, updated_at
+              ) SELECT 
+                id, year, name, upload_types, description, status, created_at, updated_at 
+              FROM assignments`, (err) => {
+                if (err) {
+                  console.error("复制数据失败:", err.message);
+                  return;
+                }
+                
+                // 删除原表并重命名新表
+                db.run(`DROP TABLE assignments`, (err) => {
+                  if (err) {
+                    console.error("删除原表失败:", err.message);
+                    return;
+                  }
+                  db.run(`ALTER TABLE assignments_new RENAME TO assignments`, (err) => {
+                    if (err) {
+                      console.error("重命名表失败:", err.message);
+                    } else {
+                      console.log("成功移除deadline列");
+                    }
+                  });
+                });
+              });
+            });
+          }
+        }
+      });
       }
     });
 

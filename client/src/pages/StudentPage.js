@@ -138,9 +138,6 @@ function StudentPage() {
                             <div className="row align-items-center">
                               <div className="col">
                                 <div className="text-body">{assignment.name}</div>
-                                {assignment.deadline && (
-                                  <div className="text-muted">截止时间: {new Date(assignment.deadline).toLocaleDateString()}</div>
-                                )}
                               </div>
                               <div className="col-auto">
                                 <span className="badge bg-blue">进行中</span>

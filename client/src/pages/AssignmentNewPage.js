@@ -17,7 +17,6 @@ function AssignmentNewPage() {
     year: new Date().getFullYear(),
     name: '',
     description: '',
-    deadline: '',
     status: 'active'
   });
 
@@ -366,17 +365,6 @@ function AssignmentNewPage() {
                 </div>
 
                 <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">截止日期</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-6">
                     <label className="form-label">状态</label>
                     <select
                       className="form-select"
@@ -495,11 +483,6 @@ function AssignmentNewPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* 作业要求模态框 */}
       {showRequirementModal && (
         <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">
