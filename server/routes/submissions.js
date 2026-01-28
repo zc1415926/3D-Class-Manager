@@ -7,15 +7,29 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// 获取三级文件夹路径的辅助函数
+function getUploadPath(assignmentId, studentYear, isThumbnail = false) {
+  // 如果没有assignmentId，使用默认路径
+  if (!assignmentId) {
+    return path.join(__dirname, isThumbnail ? '../uploads/default' : '../uploads/default');
+  }
+  
+  // 根据assignmentId、studentYear创建三级文件夹路径
+  return path.join(__dirname, isThumbnail ? '../uploads' : '../uploads', studentYear.toString(), assignmentId.toString());
+}
+
 // 配置文件上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadDir;
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
+    
     // 支持多种字段名：stlFile, files[], thumbnails[]
     if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
-      uploadDir = path.join(__dirname, '../uploads');
+      uploadDir = getUploadPath(assignmentId, studentYear, false);
     } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
-      uploadDir = path.join(__dirname, '../thumbnails');
+      uploadDir = getUploadPath(assignmentId, studentYear, true);
     } else {
       return cb(new Error('未知的文件字段'));
     }
@@ -27,11 +41,26 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
     
     if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
-      cb(null, uniqueSuffix + path.extname(file.originalname));
+      cb(null, `${studentYear}_${assignmentId}_${uniqueSuffix}${path.extname(file.originalname)}`);
     } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
-      cb(null, uniqueSuffix + '.png');
+      // 生成与主文件对应的缩略图文件名
+      // 如果主文件是 studentYear_assignmentId_filename.ext 格式，缩略图使用 studentYear_assignmentId_filename_thumbnail.jpg
+      let baseFilename = `${studentYear}_${assignmentId}_${uniqueSuffix}`;
+      
+      // 如果是从前端传递的缩略图（已包含原始文件名信息），尝试解析出原始文件名
+      if(file.originalname && typeof file.originalname === 'string' && file.originalname.includes && file.originalname.includes('_thumbnail.jpg')) {
+        // 处理前端生成的缩略图文件名（如 originalname_thumbnail.jpg）
+        const originalBase = file.originalname && typeof file.originalname === 'string' ? file.originalname.replace('_thumbnail.jpg', '') : '';
+        if(originalBase && originalBase !== file.originalname) {
+          baseFilename = originalBase;
+        }
+      }
+      
+      cb(null, `${baseFilename}_thumbnail.jpg`);
     }
   }
 });
@@ -75,7 +104,7 @@ const upload = multer({
   }
 });
 
-// 提交3D作品（支持多文件上传）
+// 提交3D作品（统一处理单文件和多文件上传）
 router.post('/', upload.any(), async (req, res) => {
   try {
     const { studentName, studentYear, workName, description, assignmentId, requirementIds } = req.body;
@@ -110,51 +139,102 @@ router.post('/', upload.any(), async (req, res) => {
         });
       }
 
-      // 检查是否是新的多文件上传方式
-      const isMultiFileUpload = filesArray.filter(f => f).length > 0;
+      // 创建提交记录
+      const result = await client.query(
+        `INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [
+          studentName,
+          parseInt(studentYear),
+          workName,
+          description || '',
+          assignmentId ? parseInt(assignmentId) : null
+        ]
+      );
 
-      let submissionId;
-      let files = [];
+      const submissionId = result.rows[0].id;
+      const files = [];
 
-      if (isMultiFileUpload) {
-        // 新的多文件上传方式
-        const validFiles = filesArray.filter(f => f);
-        const validThumbnails = thumbnailsArray.filter(f => f);
+      // 处理单文件上传模式
+      if (stlFile.length > 0) {
+        const mainFile = stlFile[0];
+        const mainThumbnail = thumbnailFile.length > 0 ? thumbnailFile[0] : null;
 
-        // 解析requirementIds，如果不存在则为空数组
-        const requirementIdsArray = requirementIds ? JSON.parse(requirementIds) : [];
-
-        // 创建提交记录（不存储文件信息）
-        const result = await client.query(
-          `INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
-           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        const fileResult = await client.query(
+          `INSERT INTO submission_files (submission_id, filename, filepath, thumbnail_path, is_primary, file_type)
+           VALUES ($1, $2, $3, $4, true, 'primary')
+           RETURNING id`,
           [
-            studentName,
-            parseInt(studentYear),
-            workName,
-            description || '',
-            assignmentId ? parseInt(assignmentId) : null
+            submissionId,
+            mainFile.filename,
+            mainFile.path,
+            mainThumbnail ? mainThumbnail.path : null
           ]
         );
 
-        submissionId = result.rows[0].id;
+        files.push({
+          id: fileResult.rows[0].id,
+          filename: mainFile.filename,
+          filepath: mainFile.path,
+          thumbnail_path: mainThumbnail ? mainThumbnail.path : null,
+          is_primary: true
+        });
+      }
+
+      // 处理多文件上传模式
+      if (filesArray.length > 0) {
+        // 解析requirementIds，如果不存在则为空数组
+        let requirementIdsArray = [];
+        if (requirementIds) {
+          try {
+            requirementIdsArray = JSON.parse(requirementIds);
+          } catch (parseError) {
+            console.error('解析requirementIds失败:', parseError);
+            return res.status(400).json({ success: false, error: 'requirementIds格式错误' });
+          }
+        }
 
         // 保存每个文件到 submission_files 表
         for (let index = 0; index < filesArray.length; index++) {
           const file = filesArray[index];
           if (file) { // 确保文件存在
             const requirementId = requirementIdsArray && requirementIdsArray[index] ? parseInt(requirementIdsArray[index]) : null;
-            const thumbnailFile = thumbnailsArray[index] || null;
+            let thumbnailFile = thumbnailsArray[index] || null;
+            
+            // 如果存在对应的缩略图，重命名缩略图文件使其与对应文件名相关联
+            if (thumbnailFile) {
+              try {
+                // 从原文件名中提取基础名称（不含扩展名）
+                const originalBasename = path.basename(file.filename, path.extname(file.filename));
+                // 创建新的缩略图文件名，基于对应文件名
+                const newThumbnailFilename = `${originalBasename}_thumbnail.jpg`;
+                const newThumbnailPath = path.join(path.dirname(thumbnailFile.path), newThumbnailFilename);
+                
+                // 重命名缩略图文件
+                await fs.promises.rename(thumbnailFile.path, newThumbnailPath);
+                
+                // 更新thumbnailFile对象的属性
+                thumbnailFile.filename = newThumbnailFilename;
+                thumbnailFile.path = newThumbnailPath;
+                
+                console.log(`缩略图已重命名为: ${newThumbnailFilename}`);
+              } catch (renameError) {
+                console.error(`重命名缩略图失败:`, renameError);
+                // 如果重命名失败，继续使用原始缩略图文件
+              }
+            }
 
             const fileResult = await client.query(
-              `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
-               VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+              `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path, sort_order, file_type)
+               VALUES ($1, $2, $3, $4, $5, $6, 'general')
+               RETURNING id`,
               [
                 submissionId,
                 requirementId,
                 file.filename,
                 file.path,
-                thumbnailFile ? thumbnailFile.path : null
+                thumbnailFile ? thumbnailFile.path : null,
+                index
               ]
             );
 
@@ -163,62 +243,24 @@ router.post('/', upload.any(), async (req, res) => {
               requirement_id: requirementId,
               filename: file.filename,
               filepath: file.path,
-              thumbnail_path: thumbnailFile ? thumbnailFile.path : null
+              thumbnail_path: thumbnailFile ? thumbnailFile.path : null,
+              sort_order: index
             });
           }
         }
-
-        client.release();
-        res.json({
-          success: true,
-          message: '作品提交成功',
-          data: {
-            id: submissionId,
-            studentName,
-            workName,
-            files: files
-          }
-        });
-
-      } else {
-        // 旧的单文件上传方式（向后兼容）
-        if (stlFile.length === 0) {
-          client.release();
-          return res.status(400).json({ error: '请上传3D模型文件（STL或OBJ格式）' });
-        }
-
-        const mainFile = stlFile[0];
-        const mainThumbnail = thumbnailFile.length > 0 ? thumbnailFile[0] : null;
-
-        const result = await client.query(
-          `INSERT INTO submissions (student_name, student_year, work_name, description, filename, filepath, thumbnail_path, assignment_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-          [
-            studentName,
-            parseInt(studentYear),
-            workName,
-            description || '',
-            mainFile.filename,
-            mainFile.path,
-            mainThumbnail ? mainThumbnail.path : null,
-            assignmentId ? parseInt(assignmentId) : null
-          ]
-        );
-
-        submissionId = result.rows[0].id;
-
-        client.release();
-        res.json({
-          success: true,
-          message: '作品提交成功',
-          data: {
-            id: submissionId,
-            studentName,
-            workName,
-            filename: stlFile.filename
-          }
-        });
       }
+
+      client.release();
+      res.json({
+        success: true,
+        message: '作品提交成功',
+        data: {
+          id: submissionId,
+          studentName,
+          workName,
+          files: files
+        }
+      });
     } catch (error) {
       client.release();
       throw error;
@@ -238,19 +280,19 @@ router.get('/', async (req, res) => {
 
     try {
       let sql = `
-        SELECT id, student_name, student_year, work_name, description, filename, thumbnail_path, created_at
-        FROM submissions
+        SELECT s.id, s.student_name, s.student_year, s.work_name, s.description, s.created_at
+        FROM submissions s
       `;
       const params = [];
       const conditions = [];
 
       if (studentYear) {
-        conditions.push(`student_year = ${params.length + 1}`);
+        conditions.push(`s.student_year = $${params.length + 1}`);
         params.push(parseInt(studentYear));
       }
 
       if (studentName) {
-        conditions.push(`student_name = ${params.length + 1}`);
+        conditions.push(`s.student_name = $${params.length + 1}`);
         params.push(studentName);
       }
 
@@ -258,20 +300,35 @@ router.get('/', async (req, res) => {
         sql += ' WHERE ' + conditions.join(' AND ');
       }
 
-      sql += ' ORDER BY created_at DESC';
+      sql += ' ORDER BY s.created_at DESC';
 
       const result = await client.query(sql, params);
 
-      const submissions = result.rows.map(row => ({
-        id: row.id,
-        studentName: row.student_name,
-        studentYear: row.student_year,
-        workName: row.work_name,
-        description: row.description,
-        filename: row.filename,
-        thumbnailPath: row.thumbnail_path ? `/thumbnails/${path.basename(row.thumbnail_path)}` : null,
-        createdAt: row.created_at
-      }));
+      // 为每个提交查询submission_files表获取缩略图
+      const submissions = [];
+      for (const row of result.rows) {
+        // 获取缩略图 - 优先使用primary文件的缩略图，否则使用第一个文件的缩略图
+        const fileResult = await client.query(
+          'SELECT thumbnail_path FROM submission_files WHERE submission_id = $1 AND thumbnail_path IS NOT NULL ORDER BY is_primary DESC LIMIT 1',
+          [row.id]
+        );
+        
+        let thumbnailPath = null;
+        if (fileResult.rows.length > 0 && fileResult.rows[0].thumbnail_path) {
+          thumbnailPath = `/uploads/${path.basename(fileResult.rows[0].thumbnail_path)}`;
+        }
+
+        submissions.push({
+          id: row.id,
+          studentName: row.student_name,
+          studentYear: row.student_year,
+          workName: row.work_name,
+          description: row.description,
+          filename: null, // 不再在主表中存储filename
+          thumbnailPath: thumbnailPath,
+          createdAt: row.created_at
+        });
+      }
 
       client.release();
       res.json({ success: true, data: submissions });
@@ -346,6 +403,7 @@ router.get('/:id', async (req, res) => {
     const client = await db.connect();
 
     try {
+      // 首先获取提交基本信息
       const result = await client.query(
         `SELECT * FROM submissions WHERE id = $1`,
         [req.params.id]
@@ -358,15 +416,42 @@ router.get('/:id', async (req, res) => {
         return res.status(404).json({ error: '作品不存在' });
       }
 
+      // 获取所有相关文件信息
+      const filesResult = await client.query(
+        `SELECT * FROM submission_files WHERE submission_id = $1 ORDER BY is_primary DESC, sort_order`,
+        [req.params.id]
+      );
+
+      // 使用第一个primary文件或第一个文件作为主要文件
+      let primaryFile = filesResult.rows.find(f => f.is_primary) || filesResult.rows[0];
+      
+      let thumbnailPath = null;
+      let filePath = null;
+      
+      if (primaryFile) {
+        thumbnailPath = primaryFile.thumbnail_path ? `/uploads/${path.basename(primaryFile.thumbnail_path)}` : null;
+        filePath = primaryFile.filepath;
+      }
+
       const submission = {
         id: row.id,
         studentName: row.student_name,
         studentYear: row.student_year,
         workName: row.work_name,
         description: row.description,
-        filename: row.filename,
-        filePath: `/uploads/${row.filename}`,
-        thumbnailPath: row.thumbnail_path ? `/thumbnails/${path.basename(row.thumbnail_path)}` : null,
+        filename: primaryFile ? primaryFile.filename : null,
+        filePath: filePath,
+        thumbnailPath: thumbnailPath,
+        files: filesResult.rows.map(file => ({
+          id: file.id,
+          requirement_id: file.requirement_id,
+          filename: file.filename,
+          filepath: file.filepath,
+          thumbnail_path: file.thumbnail_path ? `/uploads/${path.basename(file.thumbnail_path)}` : null,
+          is_primary: file.is_primary,
+          sort_order: file.sort_order,
+          file_type: file.file_type
+        })),
         createdAt: row.created_at
       };
 

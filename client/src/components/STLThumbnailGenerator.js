@@ -197,25 +197,25 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
             camera.alpha = Math.PI / 4; // 45度水平角度
           }
           
-          console.log('========== 相机信息 ==========');
+          /*console.log('========== 相机信息 ==========');
           console.log('相机位置:', camera.position);
           console.log('相机目标:', camera.getTarget());
           console.log('相机距离 (radius):', camera.radius);
           console.log('相机角度 alpha:', camera.alpha, '(弧度) =', camera.alpha * 180 / Math.PI, '(度)');
           console.log('相机角度 beta:', camera.beta, '(弧度) =', camera.beta * 180 / Math.PI, '(度)');
-          console.log('相机视野:', camera.fov);
+          console.log('相机视野:', camera.fov);*/
           
           // 输出场景中所有网格的汇总信息
-          console.log('========== 场景网格汇总 ==========');
+          //console.log('========== 场景网格汇总 ==========');
           let totalVertices = 0;
           let totalTriangles = 0;
           modelMeshes.forEach(mesh => {
             totalVertices += mesh.totalVertices;
             totalTriangles += mesh.getTotalIndices() / 3;
           });
-          console.log('总顶点数:', totalVertices);
-          console.log('总三角形数:', totalTriangles);
-          console.log('================================');
+          //console.log('总顶点数:', totalVertices);
+          //console.log('总三角形数:', totalTriangles);
+          //console.log('================================');
 
           // 渲染几帧以确保模型正确显示
           let frameCount = 0;
@@ -232,7 +232,9 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
                 canvas.toBlob((blob) => {
                   if (blob) {
                     console.log('缩略图生成成功，大小:', blob.size, '字节');
-                    const thumbnailFile = new File([blob], 'thumbnail.png', { type: 'image/png' });
+                    // 使用原文件名（去掉扩展名）加_thumbnail后缀来创建缩略图文件
+                    const baseName = stlFile.name.replace(/\.[^/.]+$/, '');
+                    const thumbnailFile = new File([blob], `${baseName}_thumbnail.jpg`, { type: 'image/jpeg' });
                     onThumbnailGenerated(thumbnailFile);
                   } else {
                     console.error('生成缩略图失败：blob 为空');
@@ -243,7 +245,7 @@ function STLThumbnailGenerator({ stlFile, onThumbnailGenerated }) {
                   // 清理
                   URL.revokeObjectURL(fileUrl);
                   engine.dispose();
-                }, 'image/png');
+                }, 'image/jpeg');
               }, 200);
             }
           };

@@ -2,7 +2,13 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 // 数据库类型配置
-const DB_TYPE = process.env.DB_TYPE || 'postgresql'; // 现在只支持 'postgresql'
+const DB_TYPE = process.env.DB_TYPE || 'postgresql';
+
+if (DB_TYPE !== 'postgresql') {
+  console.error('错误：当前系统只支持PostgreSQL数据库。');
+  console.error('请将.env文件中的DB_TYPE设置为postgresql');
+  process.exit(1);
+}
 
 // PostgreSQL配置
 const pgPool = new Pool({
@@ -39,9 +45,6 @@ const createPostgreSQLTables = async (client) => {
         student_year INTEGER NOT NULL,
         work_name VARCHAR(200) NOT NULL,
         description TEXT,
-        filename VARCHAR(255) NOT NULL,
-        filepath VARCHAR(500) NOT NULL,
-        thumbnail_path VARCHAR(500),
         assignment_id INTEGER,
         score INTEGER,  -- 评分（数字）
         grade VARCHAR(2), -- 等级 (S, A, B, C, O)
@@ -51,92 +54,25 @@ const createPostgreSQLTables = async (client) => {
       )
     `);
 
-    // 检查并添加评分相关字段（如果不存在）
+    // 检查并更新submissions表结构（移除旧的文件相关字段）
     try {
-      let columnExists = await client.query(`
+      // 检查并删除旧字段
+      const columnsResult = await client.query(`
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name='submissions' AND column_name='score'
+        WHERE table_name='submissions' 
+        AND column_name IN ('filename', 'filepath', 'thumbnail_path')
       `);
       
-      if (columnExists.rows.length === 0) {
-        await client.query(`ALTER TABLE submissions ADD COLUMN score INTEGER`);
-        console.log('已添加score字段到submissions表');
-      }
-      
-      columnExists = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name='submissions' AND column_name='grade'
-      `);
-      
-      if (columnExists.rows.length === 0) {
-        await client.query(`ALTER TABLE submissions ADD COLUMN grade VARCHAR(2)`);
-        console.log('已添加grade字段到submissions表');
-      }
-      
-      columnExists = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name='submissions' AND column_name='grader_id'
-      `);
-      
-      if (columnExists.rows.length === 0) {
-        await client.query(`ALTER TABLE submissions ADD COLUMN grader_id INTEGER`);
-        console.log('已添加grader_id字段到submissions表');
-      }
-      
-      columnExists = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name='submissions' AND column_name='graded_at'
-      `);
-      
-      if (columnExists.rows.length === 0) {
-        await client.query(`ALTER TABLE submissions ADD COLUMN graded_at TIMESTAMP`);
-        console.log('已添加graded_at字段到submissions表');
+      for (const col of columnsResult.rows) {
+        await client.query(`ALTER TABLE submissions DROP COLUMN IF EXISTS ${col.column_name}`);
+        console.log(`已删除submissions表中的${col.column_name}字段`);
       }
     } catch (error) {
-      console.error('检查或添加评分相关字段时出错:', error);
+      console.error('更新submissions表结构时出错:', error);
     }
 
-    // 创建assignments表
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS assignments (
-        id SERIAL PRIMARY KEY,
-        year INTEGER NOT NULL,
-        name VARCHAR(200) NOT NULL,
-        upload_types TEXT NOT NULL,
-        description TEXT,
-        deadline TIMESTAMP,
-        status VARCHAR(20) DEFAULT 'active',
-        sort_order INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // 检查并添加 sort_order 字段（如果不存在）
-    try {
-      const columnExists = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name='assignments' AND column_name='sort_order'
-      `);
-      
-      if (columnExists.rows.length === 0) {
-        // 添加 sort_order 列
-        await client.query(`
-          ALTER TABLE assignments 
-          ADD COLUMN sort_order INTEGER DEFAULT 0
-        `);
-        console.log('已添加sort_order字段到assignments表');
-      }
-    } catch (error) {
-      console.error('检查或添加sort_order字段时出错:', error);
-    }
-
-    // 创建submission_files表
+    // 创建submission_files表（统一存储所有文件信息）
     await client.query(`
       CREATE TABLE IF NOT EXISTS submission_files (
         id SERIAL PRIMARY KEY,
@@ -145,10 +81,54 @@ const createPostgreSQLTables = async (client) => {
         filename VARCHAR(255) NOT NULL,
         filepath VARCHAR(500) NOT NULL,
         thumbnail_path VARCHAR(500),
+        file_type VARCHAR(50) DEFAULT 'general', -- 文件类型标识
+        is_primary BOOLEAN DEFAULT FALSE, -- 是否为主要文件（单文件上传模式）
+        sort_order INTEGER DEFAULT 0, -- 排序
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
       )
     `);
+
+    // 检查并更新submission_files表结构（添加新字段）
+    try {
+      // 检查is_primary字段是否存在
+      const isPrimaryColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submission_files' AND column_name='is_primary'
+      `);
+      
+      if (isPrimaryColumn.rows.length === 0) {
+        await client.query(`ALTER TABLE submission_files ADD COLUMN is_primary BOOLEAN DEFAULT FALSE`);
+        console.log('已添加is_primary字段到submission_files表');
+      }
+
+      // 检查file_type字段是否存在
+      const fileTypeColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submission_files' AND column_name='file_type'
+      `);
+      
+      if (fileTypeColumn.rows.length === 0) {
+        await client.query(`ALTER TABLE submission_files ADD COLUMN file_type VARCHAR(50) DEFAULT 'general'`);
+        console.log('已添加file_type字段到submission_files表');
+      }
+
+      // 检查sort_order字段是否存在
+      const sortOrderColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submission_files' AND column_name='sort_order'
+      `);
+      
+      if (sortOrderColumn.rows.length === 0) {
+        await client.query(`ALTER TABLE submission_files ADD COLUMN sort_order INTEGER DEFAULT 0`);
+        console.log('已添加sort_order字段到submission_files表');
+      }
+    } catch (error) {
+      console.error('更新submission_files表结构时出错:', error);
+    }
 
     // 创建assignment_upload_requirements表
     await client.query(`

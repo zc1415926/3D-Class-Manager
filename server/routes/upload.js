@@ -5,10 +5,24 @@ const fs = require('fs');
 
 const router = express.Router();
 
+// 获取三级文件夹路径的辅助函数
+function getUploadPath(assignmentId, studentYear, isThumbnail = false) {
+  // 如果没有assignmentId，使用默认路径
+  if (!assignmentId) {
+    return path.join(__dirname, '../uploads/images');
+  }
+  
+  // 根据assignmentId、studentYear创建三级文件夹路径
+  return path.join(__dirname, '../uploads', 'images', studentYear.toString(), assignmentId.toString());
+}
+
 // 配置文件上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/images');
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
+    const uploadDir = getUploadPath(assignmentId, studentYear);
+    
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -16,7 +30,10 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
+    
+    cb(null, `${studentYear}_${assignmentId}_${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
@@ -56,7 +73,10 @@ router.post('/upload-image', upload.single('upload'), (req, res) => {
 // 配置作业附件上传（支持各种文件类型）
 const assignmentStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/assignments');
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
+    const uploadDir = getUploadPath(assignmentId, studentYear);
+    
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -64,7 +84,10 @@ const assignmentStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const assignmentId = req.body.assignmentId || 'general';
+    const studentYear = req.body.studentYear || new Date().getFullYear();
+    
+    cb(null, `${studentYear}_${assignmentId}_${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
@@ -90,7 +113,7 @@ router.post('/upload-assignment-attachment', assignmentUpload.single('file'), (r
       success: true,
       data: {
         filename: req.file.filename,
-        filepath: `/uploads/assignments/${req.file.filename}`,
+        filepath: `/uploads/images/${req.file.filename}`,
         originalname: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype
