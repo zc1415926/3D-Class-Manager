@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import GradeSubmissionModal from '../components/GradeSubmissionModal';
 
 function AssignmentSubmissionsPage() {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,65 +115,6 @@ function AssignmentSubmissionsPage() {
   const handleCloseGradeModal = () => {
     setShowGradeModal(false);
     setGradingSubmission(null);
-  };
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 获取作业信息
-      const assignmentRes = await axios.get(`/api/assignments/${id}`);
-      if (assignmentRes.data.success) {
-        // 处理作业信息，确保upload_types是数组
-        const assignmentData = assignmentRes.data.data;
-        if (typeof assignmentData.upload_types === 'string') {
-          assignmentData.upload_types = JSON.parse(assignmentData.upload_types);
-        }
-        setAssignment(assignmentData);
-      }
-
-      // 获取该作业的所有提交
-      const submissionsRes = await axios.get(`/api/assignments/${id}/submissions`);
-      if (submissionsRes.data.success) {
-        // 处理数据，转换绝对路径为相对路径
-        const processedSubmissions = submissionsRes.data.data.map(sub => ({
-          ...sub,
-          studentName: sub.student_name,
-          studentYear: sub.student_year,
-          workName: sub.work_name,
-          description: sub.description,
-          filename: sub.filename,
-          filePath: `/uploads/${sub.filename}`,
-          thumbnailPath: sub.thumbnail_path ? `/thumbnails/${sub.thumbnail_path.split('/').pop()}` : null,
-          createdAt: sub.created_at,
-          assignmentId: sub.assignment_id
-        }));
-        setSubmissions(processedSubmissions);
-      }
-    } catch (err) {
-      console.error('获取数据失败:', err);
-      setError('获取数据失败，请稍后重试');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (submissionId) => {
-    if (!window.confirm('确定要删除这个作品吗？')) {
-      return;
-    }
-
-    try {
-      const response = await axios.delete(`/api/submissions/${submissionId}`);
-      if (response.data.success) {
-        // 重新获取数据
-        fetchData();
-      } else {
-        setError('删除失败：' + response.data.error);
-      }
-    } catch (err) {
-      console.error('删除失败:', err);
-      setError('删除失败，请稍后重试');
-    }
   };
 
   if (loading) {
