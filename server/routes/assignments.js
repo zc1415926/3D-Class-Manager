@@ -79,7 +79,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
-  const { year, name, upload_types, description, deadline, status } = req.body;
+  const { year, name, upload_types, description, status } = req.body;
 
   // 验证必填字段
   if (!year || !name || !upload_types || !Array.isArray(upload_types)) {
@@ -89,7 +89,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
   try {
     const sql = `
-      INSERT INTO assignments (year, name, upload_types, description, deadline, status)
+      INSERT INTO assignments (year, name, upload_types, description, status)
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
     `;
 
@@ -98,7 +98,6 @@ router.post('/', authenticateToken, async (req, res) => {
       name,
       JSON.stringify(upload_types),
       description || null,
-      deadline || null,
       status || 'active'
     ];
 
@@ -121,7 +120,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
   const { id } = req.params;
-  const { year, name, upload_types, description, deadline, status } = req.body;
+  const { year, name, upload_types, description, status } = req.body;
 
   // 验证必填字段
   if (!year || !name || !upload_types || !Array.isArray(upload_types)) {
@@ -142,7 +141,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
       JSON.stringify(upload_types),
       description || null,
       deadline || null,
-      status || 'active',
       id
     ];
 

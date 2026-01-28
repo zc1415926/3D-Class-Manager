@@ -18,7 +18,6 @@ function AssignmentEditPage() {
     year: '',
     name: '',
     description: '',
-    deadline: '',
     status: 'active'
   });
 
@@ -41,8 +40,6 @@ function AssignmentEditPage() {
           year: assignment.year,
           name: assignment.name,
           description: assignment.description || '',
-          deadline: assignment.deadline ? assignment.deadline.split('T')[0] : '',
-          status: assignment.status || 'active'
         });
       } else {
         setError('获取作业信息失败');
@@ -418,17 +415,6 @@ function AssignmentEditPage() {
 
                 <div className="row mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">截止日期</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">状态</label>
                     <select
                       className="form-select"
                       name="status"
@@ -546,11 +532,6 @@ function AssignmentEditPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 作业要求模态框 */}
       {showRequirementModal && (
         <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">
           <div className="modal-dialog modal-lg" role="document">

@@ -145,15 +145,6 @@ function AssignmentViewPage() {
                 </div>
               </div>
 
-              <div className="mb-4">
-                <h6 className="text-muted text-uppercase mb-2">截止日期</h6>
-                <div>
-                  {assignment.deadline 
-                    ? new Date(assignment.deadline).toLocaleString('zh-CN')
-                    : '无截止日期'
-                  }
-                </div>
-              </div>
 
               <div className="mb-4">
                 <h6 className="text-muted text-uppercase mb-2">详细描述</h6>

@@ -157,7 +157,6 @@ function AssignmentManagementPage() {
                     <th>年份</th>
                     <th>作业名称</th>
                     <th>作业类型</th>
-                    <th>截止日期</th>
                     <th>状态</th>
                     <th>提交数</th>
                     <th>操作</th>
@@ -179,13 +178,6 @@ function AssignmentManagementPage() {
                           </span>
                         ))}
                       </td>
-                      <td>
-                        {assignment.deadline 
-                          ? new Date(assignment.deadline).toLocaleString('zh-CN')
-                          : '-'
-                        }
-                      </td>
-                      <td dangerouslySetInnerHTML={{ __html: getStatusBadge(assignment.status) }} />
                       <td>
                         <Link to={`/assignments/${assignment.id}/submissions`} className="badge bg-primary">
                           {assignment.submission_count || 0}

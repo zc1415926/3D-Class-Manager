@@ -241,8 +241,6 @@ const initializePostgreSQL = async () => {
   }
 };
 
-
-
 // 统一的数据库初始化函数
 const initializeDatabase = () => {
   return initializePostgreSQL();
@@ -252,8 +250,6 @@ const initializeDatabase = () => {
 const getPostgreSQLDatabase = () => {
   return pgPool;
 };
-
-
 
 // 统一的数据库获取函数
 const getDatabase = () => {
@@ -266,7 +262,6 @@ const closeDatabase = () => {
     pgPool.end();
     console.log('PostgreSQL连接池已关闭');
   }
-
 };
 
 module.exports = {
