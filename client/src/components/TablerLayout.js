@@ -51,7 +51,7 @@ const TablerLayout = ({ children }) => {
             icon: 'users'
           },
           {
-            title: '上传类型管理',
+            title: '作业类型管理',
             path: '/upload-types',
             icon: 'list-details'
           }

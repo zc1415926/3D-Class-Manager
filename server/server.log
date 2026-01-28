@@ -1,0 +1,9 @@
+
+> stl-manager-server@1.0.0 start
+> node server.js
+
+[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+已连接到PostgreSQL数据库
+PostgreSQL表结构已创建
+数据库初始化完成
+Server is running on port 5000

@@ -105,11 +105,33 @@ const createPostgreSQLTables = async (client) => {
         description TEXT,
         icon VARCHAR(50),
         extensions TEXT,
+        max_file_size INTEGER DEFAULT 52428800, -- 50MB default
         is_active BOOLEAN DEFAULT TRUE,
         sort_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 检查并添加 max_file_size 字段（如果不存在）
+    try {
+      // 检查列是否存在
+      const columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='upload_types' AND column_name='max_file_size'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        // 添加 max_file_size 列
+        await client.query(`
+          ALTER TABLE upload_types 
+          ADD COLUMN max_file_size INTEGER DEFAULT 52428800
+        `);
+        console.log('已添加max_file_size字段到upload_types表（默认50MB）');
+      }
+    } catch (error) {
+      console.error('检查或添加max_file_size字段时出错:', error);
+    }
 
     // 创建students表
     await client.query(`
@@ -320,6 +342,7 @@ const initializeSQLite = () => {
       description TEXT,
       icon TEXT,
       extensions TEXT,
+      max_file_size INTEGER DEFAULT 52428800, -- 50MB default (50*1024*1024)
       is_active INTEGER DEFAULT 1,
       sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -329,26 +352,42 @@ const initializeSQLite = () => {
       } else {
         console.log('upload_types表已就绪');
         
-        // 检查是否已有数据，如果没有则添加默认上传类型
-        db.get('SELECT COUNT(*) as count FROM upload_types', [], (err, row) => {
-          if (err) {
-            console.error('查询上传类型数量失败:', err.message);
-          } else if (row.count === 0) {
-            const defaultUploadTypes = [
-              { name: 'STL模型', code: 'stl', description: '3D打印模型文件', icon: 'box', extensions: '.stl', sort_order: 1 },
-              { name: 'OBJ模型', code: 'obj', description: '3D对象文件', icon: 'box', extensions: '.obj', sort_order: 2 },
-              { name: '图片', code: 'image', description: '图片文件（JPG、PNG等）', icon: 'photo', extensions: '.jpg,.jpeg,.png,.gif,.webp', sort_order: 3 },
-              { name: '文档', code: 'document', description: '文档文件（PDF、DOC等）', icon: 'file-text', extensions: '.pdf,.doc,.docx,.txt', sort_order: 4 },
-              { name: '视频', code: 'video', description: '视频文件', icon: 'video', extensions: '.mp4,.avi,.mov,.mkv', sort_order: 5 }
-            ];
-            
-            const stmt = db.prepare('INSERT INTO upload_types (name, code, description, icon, extensions, sort_order) VALUES (?, ?, ?, ?, ?, ?)');
-            defaultUploadTypes.forEach(type => {
-              stmt.run(type.name, type.code, type.description, type.icon, type.extensions, type.sort_order);
-            });
-            stmt.finalize();
-            console.log('已添加5个默认上传类型');
+        // 检查并添加 max_file_size 字段（如果不存在）
+        db.all("PRAGMA table_info(upload_types)", [], (err, columns) => {
+          if (!err) {
+            const hasMaxFileSize = columns.some(col => col.name === 'max_file_size');
+            if (!hasMaxFileSize) {
+              db.run('ALTER TABLE upload_types ADD COLUMN max_file_size INTEGER DEFAULT 52428800', (err) => {
+                if (err) {
+                  console.error('添加max_file_size字段失败:', err.message);
+                } else {
+                  console.log('已添加max_file_size字段到upload_types表（默认50MB）');
+                }
+              });
+            }
           }
+          
+          // 检查是否已有数据，如果没有则添加默认上传类型
+          db.get('SELECT COUNT(*) as count FROM upload_types', [], (err, row) => {
+            if (err) {
+              console.error('查询上传类型数量失败:', err.message);
+            } else if (row.count === 0) {
+              const defaultUploadTypes = [
+                { name: 'STL模型', code: 'stl', description: '3D打印模型文件', icon: 'box', extensions: '.stl', sort_order: 1 },
+                { name: 'OBJ模型', code: 'obj', description: '3D对象文件', icon: 'box', extensions: '.obj', sort_order: 2 },
+                { name: '图片', code: 'image', description: '图片文件（JPG、PNG等）', icon: 'photo', extensions: '.jpg,.jpeg,.png,.gif,.webp', sort_order: 3 },
+                { name: '文档', code: 'document', description: '文档文件（PDF、DOC等）', icon: 'file-text', extensions: '.pdf,.doc,.docx,.txt', sort_order: 4 },
+                { name: '视频', code: 'video', description: '视频文件', icon: 'video', extensions: '.mp4,.avi,.mov,.mkv', sort_order: 5 }
+              ];
+              
+              const stmt = db.prepare('INSERT INTO upload_types (name, code, description, icon, extensions, max_file_size, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)');
+              defaultUploadTypes.forEach(type => {
+                stmt.run(type.name, type.code, type.description, type.icon, type.extensions, 52428800, type.sort_order);
+              });
+              stmt.finalize();
+              console.log('已添加5个默认上传类型');
+            }
+          });
         });
       }
     });

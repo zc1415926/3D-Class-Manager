@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import TablerLayout from './components/TablerLayout';
 import HomePage from './pages/HomePage';
 import StudentPage from './pages/StudentPage';
+import SubmissionPage from './pages/SubmissionPage';
 import TeacherPage from './pages/TeacherPage';
 import ViewerPage from './pages/ViewerPage';
 import StudentManagementPage from './pages/StudentManagementPage';
@@ -26,7 +27,7 @@ function AppContent() {
     <TablerLayout>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/submit" element={<StudentPage />} />
+        <Route path="/submit" element={<SubmissionPage />} />
         <Route path="/works" element={<TeacherPage />} />
         <Route path="/student-management" element={<StudentManagementPage />} />
         <Route path="/student-view" element={<StudentViewPage />} />

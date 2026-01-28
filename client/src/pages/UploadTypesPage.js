@@ -15,9 +15,8 @@ function UploadTypesPage() {
     name: '',
     code: '',
     description: '',
-    icon: 'file',
     extensions: '',
-    sort_order: 0
+    max_file_size: 50, // 默认50MB
   });
 
   useEffect(() => {
@@ -37,11 +36,11 @@ function UploadTypesPage() {
       if (response.data.success) {
         setUploadTypes(response.data.data);
       } else {
-        setError('获取上传类型失败');
+        setError('获取作业类型失败');
       }
     } catch (err) {
-      console.error('获取上传类型错误:', err);
-      setError('获取上传类型失败，请稍后重试');
+      console.error('获取作业类型错误:', err);
+      setError('获取作业类型失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -49,7 +48,12 @@ function UploadTypesPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // 如果是max_file_size字段，将其转换为数字
+    if (name === 'max_file_size') {
+      setFormData(prev => ({ ...prev, [name]: parseInt(value) || 0 }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleExtensionsChange = (e) => {
@@ -59,8 +63,8 @@ function UploadTypesPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.code) {
-      alert('请填写名称和编码');
+    if (!formData.name || !formData.code || !formData.extensions) {
+      alert('请填写名称、类型标签和扩展名');
       return;
     }
 
@@ -71,22 +75,29 @@ function UploadTypesPage() {
       .filter(ext => ext.length > 0)
       .map(ext => ext.startsWith('.') ? ext : `.${ext}`);
 
+    if (extensionsArray.length === 0) {
+      alert('扩展名格式不正确，请输入至少一个有效的扩展名');
+      return;
+    }
+
     try {
       if (editingType) {
         await axios.put(`/api/upload-types/${editingType.id}`, {
           ...formData,
-          extensions: extensionsArray
+          extensions: extensionsArray,
+          max_file_size: formData.max_file_size * 1024 * 1024 // 转换为字节
         });
       } else {
         await axios.post('/api/upload-types', {
           ...formData,
-          extensions: extensionsArray
+          extensions: extensionsArray,
+          max_file_size: formData.max_file_size * 1024 * 1024 // 转换为字节
         });
       }
       handleCloseModal();
       fetchUploadTypes();
     } catch (err) {
-      console.error('保存上传类型失败:', err);
+      console.error('保存作业类型失败:', err);
       alert(err.response?.data?.error || '保存失败，请稍后重试');
     }
   };
@@ -97,15 +108,14 @@ function UploadTypesPage() {
       name: type.name,
       code: type.code,
       description: type.description || '',
-      icon: type.icon || 'file',
       extensions: Array.isArray(type.extensions) ? type.extensions.join(', ') : '',
-      sort_order: type.sort_order || 0
+      max_file_size: type.max_file_size ? Math.round(type.max_file_size / 1024 / 1024) : 50, // 转换为MB显示
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`确定要删除上传类型"${name}"吗？`)) {
+    if (!window.confirm(`确定要删除作业类型"${name}"吗？`)) {
       return;
     }
 
@@ -113,7 +123,7 @@ function UploadTypesPage() {
       await axios.delete(`/api/upload-types/${id}`);
       fetchUploadTypes();
     } catch (err) {
-      console.error('删除上传类型失败:', err);
+      console.error('删除作业类型失败:', err);
       alert(err.response?.data?.error || '删除失败，请稍后重试');
     }
   };
@@ -125,9 +135,8 @@ function UploadTypesPage() {
       name: '',
       code: '',
       description: '',
-      icon: 'file',
       extensions: '',
-      sort_order: 0
+      max_file_size: 50, // 默认50MB
     });
   };
 
@@ -148,7 +157,7 @@ function UploadTypesPage() {
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">加载中...</span>
         </div>
-        <p className="mt-3 text-muted">加载上传类型中...</p>
+        <p className="mt-3 text-muted">加载作业类型中...</p>
       </div>
     );
   }
@@ -180,8 +189,8 @@ function UploadTypesPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h3 className="mb-1">上传类型管理</h3>
-          <div className="text-muted">管理作业上传类型</div>
+          <h3 className="mb-1">作业类型管理</h3>
+          <div className="text-muted">管理作业类型</div>
         </div>
         <div>
           <button
@@ -193,7 +202,7 @@ function UploadTypesPage() {
               <path d="M12 5l0 14" />
               <path d="M5 12l14 0" />
             </svg>
-            添加上传类型
+            添加作业类型
           </button>
         </div>
       </div>
@@ -210,11 +219,11 @@ function UploadTypesPage() {
                 <path d="M17 17v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z" />
               </svg>
             </div>
-            <p className="empty-title">暂无上传类型</p>
-            <p className="empty-subtitle text-muted">还没有创建任何上传类型</p>
+            <p className="empty-title">暂无作业类型</p>
+            <p className="empty-subtitle text-muted">还没有创建任何作业类型</p>
             <div className="empty-action">
               <button onClick={() => setShowModal(true)} className="btn btn-primary">
-                创建第一个上传类型
+                创建第一个作业类型
               </button>
             </div>
           </div>
@@ -228,9 +237,10 @@ function UploadTypesPage() {
                   <tr>
                     <th>排序</th>
                     <th>名称</th>
-                    <th>编码</th>
+                    <th>类型标签</th>
                     <th>描述</th>
                     <th>扩展名</th>
+                    <th>最大文件大小</th>
                     <th>图标</th>
                     <th>状态</th>
                     <th>操作</th>
@@ -261,6 +271,11 @@ function UploadTypesPage() {
                         ) : (
                           <span className="text-muted">-</span>
                         )}
+                      </td>
+                      <td>
+                        <span className="text-muted">
+                          {type.max_file_size ? `${Math.round(type.max_file_size / 1024 / 1024)} MB` : '50 MB (默认)'}
+                        </span>
                       </td>
                       <td>
                         <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -305,7 +320,7 @@ function UploadTypesPage() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {editingType ? '编辑上传类型' : '添加上传类型'}
+                  {editingType ? '编辑作业类型' : '添加作业类型'}
                 </h5>
                 <button
                   type="button"
@@ -332,7 +347,7 @@ function UploadTypesPage() {
 
                   <div className="mb-3">
                     <label className="form-label">
-                      编码 <span className="text-danger">*</span>
+                      类型标签 <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
@@ -341,12 +356,30 @@ function UploadTypesPage() {
                       value={formData.code}
                       onChange={handleInputChange}
                       required
-                      placeholder="例如：stl（英文小写）"
+                      placeholder="例如：stl（英文小写，系统内部唯一标识）"
                       disabled={!!editingType}
                     />
                     {editingType && (
-                      <div className="form-text">编码创建后不可修改</div>
+                      <div className="form-text">类型代码创建后不可修改</div>
                     )}
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">
+                      扩展名 <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="extensions"
+                      value={formData.extensions}
+                      onChange={handleExtensionsChange}
+                      required
+                      placeholder="例如： .stl, .obj 或 stl, obj (多个用英文逗号分隔)"
+                    />
+                    <div className="form-text">
+                      支持的文件扩展名，多个扩展名用英文逗号分隔。例如：.stl, .obj
+                    </div>
                   </div>
 
                   <div className="mb-3">
@@ -357,54 +390,26 @@ function UploadTypesPage() {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows="2"
-                      placeholder="请描述该上传类型的用途"
+                      placeholder="请描述该作业类型的用途"
                     ></textarea>
                   </div>
 
                   <div className="mb-3">
                     <label className="form-label">
-                      扩展名 <span className="text-muted">(可选)</span>
+                      最大文件大小 (MB) <span className="text-muted">(可选)</span>
                     </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="extensions"
-                      value={formData.extensions}
-                      onChange={handleExtensionsChange}
-                      placeholder="例如： .stl, .obj 或 stl, obj (多个用逗号分隔)"
-                    />
-                    <div className="form-text">
-                      支持的文件扩展名，多个扩展名用逗号分隔。例如：.stl, .obj
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">图标</label>
-                    <select
-                      className="form-select"
-                      name="icon"
-                      value={formData.icon}
-                      onChange={handleInputChange}
-                    >
-                      <option value="file">文件</option>
-                      <option value="box">盒子</option>
-                      <option value="photo">图片</option>
-                      <option value="file-text">文档</option>
-                      <option value="video">视频</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">排序</label>
                     <input
                       type="number"
                       className="form-control"
-                      name="sort_order"
-                      value={formData.sort_order}
+                      name="max_file_size"
+                      value={formData.max_file_size}
                       onChange={handleInputChange}
-                      min="0"
-                      placeholder="数字越小越靠前"
+                      min="1"
+                      placeholder="例如：50（单位：MB）"
                     />
+                    <div className="form-text">
+                      设置该类型文件的最大上传附件大小（单位：MB），默认为50MB
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">
