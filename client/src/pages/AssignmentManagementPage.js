@@ -65,55 +65,48 @@ function AssignmentManagementPage() {
     fetchAssignments();
   };
 
-  // 处理作业上移
-  const handleMoveUp = async (index) => {
-    if (index <= 0) return; // 已经在顶部，不能上移
-    
-    const currentAssignment = assignments[index];
-    const prevAssignment = assignments[index - 1];
-    
-    try {
-      // 交换两个作业的排序
-      await axios.put('/api/assignments/reorder', {
-        assignments: [
-          { id: currentAssignment.id, sort_order: index - 1 },
-          { id: prevAssignment.id, sort_order: index }
-        ]
-      });
-      
-      // 更新本地状态
-      const newAssignments = [...assignments];
-      [newAssignments[index], newAssignments[index - 1]] = [newAssignments[index - 1], newAssignments[index]];
-      setAssignments(newAssignments);
-    } catch (err) {
-      console.error('移动作业失败:', err);
-      alert('移动作业失败，请稍后重试');
-    }
+  // 拖拽排序相关函数
+  const handleDragStart = (e, index) => {
+    e.dataTransfer.setData('text/plain', index);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  // 处理作业下移
-  const handleMoveDown = async (index) => {
-    if (index >= assignments.length - 1) return; // 已经在底部，不能下移
-    
-    const currentAssignment = assignments[index];
-    const nextAssignment = assignments[index + 1];
-    
+  const handleDragOver = (e) => {
+    e.preventDefault(); // 必须调用，否则drop事件不会触发
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+
+    if (dragIndex === dropIndex) return; // 拖拽到原位置，不处理
+
+    const newAssignments = [...assignments];
+    const draggedItem = newAssignments[dragIndex];
+
+    // 移动项目
+    newAssignments.splice(dragIndex, 1);
+    newAssignments.splice(dropIndex, 0, draggedItem);
+
+    // 更新本地状态
+    setAssignments(newAssignments);
+
+    // 发送排序请求到服务器
     try {
-      // 交换两个作业的排序
+      const assignmentsWithNewOrder = newAssignments.map((assignment, index) => ({
+        id: assignment.id,
+        sort_order: index
+      }));
+
       await axios.put('/api/assignments/reorder', {
-        assignments: [
-          { id: currentAssignment.id, sort_order: index + 1 },
-          { id: nextAssignment.id, sort_order: index }
-        ]
+        assignments: assignmentsWithNewOrder
       });
-      
-      // 更新本地状态
-      const newAssignments = [...assignments];
-      [newAssignments[index], newAssignments[index + 1]] = [newAssignments[index + 1], newAssignments[index]];
-      setAssignments(newAssignments);
     } catch (err) {
-      console.error('移动作业失败:', err);
-      alert('移动作业失败，请稍后重试');
+      console.error('更新排序失败:', err);
+      alert('更新排序失败，请稍后重试');
+      // 如果服务器更新失败，回滚到之前的状态
+      setAssignments(assignments);
     }
   };
 
@@ -216,40 +209,26 @@ function AssignmentManagementPage() {
                 </thead>
                 <tbody>
                   {assignments.map((assignment, index) => (
-                    <tr key={assignment.id}>
+                    <tr 
+                      key={assignment.id} 
+                      draggable="true" 
+                      onDragStart={(e) => handleDragStart(e, index)} 
+                      onDragOver={handleDragOver} 
+                      onDrop={(e) => handleDrop(e, index)}
+                      style={{ cursor: 'move' }}
+                    >
                       <td>
                         <div className="d-flex align-items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-grip-horizontal me-2 text-muted" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M4 10h4" />
+                            <path d="M4 14h4" />
+                            <path d="M16 10h4" />
+                            <path d="M16 14h4" />
+                            <path d="M10 6h4" />
+                            <path d="M10 18h4" />
+                          </svg>
                           <span className="badge bg-secondary me-2">{index + 1}</span>
-                          <div className="d-flex gap-1">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => handleMoveUp(index)}
-                              disabled={index === 0}
-                              title="上移"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-up" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M12 5l0 14" />
-                                <path d="M18 11l-6 -6" />
-                                <path d="M6 11l6 -6" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => handleMoveDown(index)}
-                              disabled={index === assignments.length - 1}
-                              title="下移"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-arrow-down" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M12 5l0 14" />
-                                <path d="M18 13l-6 6" />
-                                <path d="M6 13l6 6" />
-                              </svg>
-                            </button>
-                          </div>
                         </div>
                       </td>
                       <td>{assignment.year}</td>
