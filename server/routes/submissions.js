@@ -121,6 +121,9 @@ router.post('/', upload.any(), async (req, res) => {
         const validFiles = filesArray.filter(f => f);
         const validThumbnails = thumbnailsArray.filter(f => f);
 
+        // 解析requirementIds，如果不存在则为空数组
+        const requirementIdsArray = requirementIds ? JSON.parse(requirementIds) : [];
+
         // 创建提交记录（不存储文件信息）
         const result = await client.query(
           `INSERT INTO submissions (student_name, student_year, work_name, description, assignment_id)
@@ -139,28 +142,30 @@ router.post('/', upload.any(), async (req, res) => {
         // 保存每个文件到 submission_files 表
         for (let index = 0; index < filesArray.length; index++) {
           const file = filesArray[index];
-          const requirementId = requirementIds ? parseInt(requirementIds[index]) : null;
-          const thumbnailFile = thumbnailsArray[index] || null;
+          if (file) { // 确保文件存在
+            const requirementId = requirementIdsArray && requirementIdsArray[index] ? parseInt(requirementIdsArray[index]) : null;
+            const thumbnailFile = thumbnailsArray[index] || null;
 
-          const fileResult = await client.query(
-            `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
-             VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-            [
-              submissionId,
-              requirementId,
-              file.filename,
-              file.path,
-              thumbnailFile ? thumbnailFile.path : null
-            ]
-          );
+            const fileResult = await client.query(
+              `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path)
+               VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+              [
+                submissionId,
+                requirementId,
+                file.filename,
+                file.path,
+                thumbnailFile ? thumbnailFile.path : null
+              ]
+            );
 
-          files.push({
-            id: fileResult.rows[0].id,
-            requirement_id: requirementId,
-            filename: file.filename,
-            filepath: file.path,
-            thumbnail_path: thumbnailFile ? thumbnailFile.path : null
-          });
+            files.push({
+              id: fileResult.rows[0].id,
+              requirement_id: requirementId,
+              filename: file.filename,
+              filepath: file.path,
+              thumbnail_path: thumbnailFile ? thumbnailFile.path : null
+            });
+          }
         }
 
         client.release();
