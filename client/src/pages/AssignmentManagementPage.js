@@ -198,7 +198,7 @@ function AssignmentManagementPage() {
               <table className="table table-vcenter card-table">
                 <thead>
                   <tr>
-                    <th>排序</th>
+                    <th></th>
                     <th>年份</th>
                     <th>作业名称</th>
                     <th>作业类型</th>
@@ -218,18 +218,15 @@ function AssignmentManagementPage() {
                       style={{ cursor: 'move' }}
                     >
                       <td>
-                        <div className="d-flex align-items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-grip-horizontal me-2 text-muted" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M4 10h4" />
-                            <path d="M4 14h4" />
-                            <path d="M16 10h4" />
-                            <path d="M16 14h4" />
-                            <path d="M10 6h4" />
-                            <path d="M10 18h4" />
-                          </svg>
-                          <span className="badge bg-secondary me-2">{index + 1}</span>
-                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-grip-horizontal text-muted" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <path d="M4 10h4" />
+                          <path d="M4 14h4" />
+                          <path d="M16 10h4" />
+                          <path d="M16 14h4" />
+                          <path d="M10 6h4" />
+                          <path d="M10 18h4" />
+                        </svg>
                       </td>
                       <td>{assignment.year}</td>
                       <td>
