@@ -151,7 +151,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
               >
                 {uploadTypes.map(type => (
                   <option key={type.code} value={type.code}>
-                    {type.name} ({type.code})
+                    {type.name} ({type.code}) - {type.description || "无描述"}
                   </option>
                 ))}
               </select>
