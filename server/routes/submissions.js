@@ -280,6 +280,60 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 评分提交
+router.put('/:id/grade', authenticateToken, async (req, res) => {
+  const db = getDatabase();
+  const client = await db.connect();
+  const { id } = req.params;
+  const { score, grade } = req.body;
+  const userId = req.user.id;
+
+  // 验证评分数据
+  if (score === undefined || grade === undefined) {
+    client.release();
+    return res.status(400).json({ success: false, error: '缺少评分数据' });
+  }
+
+  // 验证评分等级是否有效
+  const validGrades = ['S', 'A', 'B', 'C', 'O'];
+  if (!validGrades.includes(grade)) {
+    client.release();
+    return res.status(400).json({ success: false, error: '无效的评分等级' });
+  }
+
+  try {
+    // 获取当前提交信息
+    const submissionResult = await client.query(
+      'SELECT * FROM submissions WHERE id = $1', 
+      [id]
+    );
+
+    if (submissionResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ success: false, error: '提交不存在' });
+    }
+
+    // 更新评分
+    const updateResult = await client.query(`
+      UPDATE submissions 
+      SET score = $1, grade = $2, grader_id = $3, graded_at = CURRENT_TIMESTAMP 
+      WHERE id = $4 
+      RETURNING *
+    `, [score, grade, userId, id]);
+
+    client.release();
+    res.json({ 
+      success: true, 
+      data: updateResult.rows[0],
+      message: '评分成功' 
+    });
+  } catch (error) {
+    console.error('评分提交失败:', error);
+    client.release();
+    res.status(500).json({ success: false, error: '评分提交失败' });
+  }
+});
+
 // 获取单个作品详情
 router.get('/:id', async (req, res) => {
   try {
@@ -320,6 +374,31 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('获取详情失败:', error);
     res.status(500).json({ error: '获取详情失败' });
+  }
+});
+
+// 获取指定作业的所有提交（包含评分信息）
+router.get('/by-assignment/:assignmentId', async (req, res) => {
+  const db = getDatabase();
+  const client = await db.connect();
+  const { assignmentId } = req.params;
+
+  try {
+    const result = await client.query(`
+      SELECT s.*, 
+             u.username as grader_name
+      FROM submissions s
+      LEFT JOIN users u ON s.grader_id = u.id
+      WHERE s.assignment_id = $1
+      ORDER BY s.created_at DESC
+    `, [assignmentId]);
+
+    client.release();
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('获取作业提交失败:', error);
+    client.release();
+    res.status(500).json({ success: false, error: '获取作业提交失败' });
   }
 });
 

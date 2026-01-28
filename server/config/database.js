@@ -43,9 +43,62 @@ const createPostgreSQLTables = async (client) => {
         filepath VARCHAR(500) NOT NULL,
         thumbnail_path VARCHAR(500),
         assignment_id INTEGER,
+        score INTEGER,  -- 评分（数字）
+        grade VARCHAR(2), -- 等级 (S, A, B, C, O)
+        grader_id INTEGER, -- 评分者ID
+        graded_at TIMESTAMP, -- 评分时间
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 检查并添加评分相关字段（如果不存在）
+    try {
+      let columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submissions' AND column_name='score'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        await client.query(`ALTER TABLE submissions ADD COLUMN score INTEGER`);
+        console.log('已添加score字段到submissions表');
+      }
+      
+      columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submissions' AND column_name='grade'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        await client.query(`ALTER TABLE submissions ADD COLUMN grade VARCHAR(2)`);
+        console.log('已添加grade字段到submissions表');
+      }
+      
+      columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submissions' AND column_name='grader_id'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        await client.query(`ALTER TABLE submissions ADD COLUMN grader_id INTEGER`);
+        console.log('已添加grader_id字段到submissions表');
+      }
+      
+      columnExists = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='submissions' AND column_name='graded_at'
+      `);
+      
+      if (columnExists.rows.length === 0) {
+        await client.query(`ALTER TABLE submissions ADD COLUMN graded_at TIMESTAMP`);
+        console.log('已添加graded_at字段到submissions表');
+      }
+    } catch (error) {
+      console.error('检查或添加评分相关字段时出错:', error);
+    }
 
     // 创建assignments表
     await client.query(`
