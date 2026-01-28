@@ -179,8 +179,6 @@ function AssignmentManagementPage() {
                         ))}
                       </td>
                       <td>
-                        {assignment.deadline 
-                      <td>
                         <Link to={`/assignments/${assignment.id}/submissions`} className="badge bg-primary">
                           {assignment.submission_count || 0}
                         </Link>

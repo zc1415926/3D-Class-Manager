@@ -40,7 +40,6 @@ function AssignmentEditPage() {
           year: assignment.year,
           name: assignment.name,
           description: assignment.description || '',
-          deadline: assignment.deadline ? assignment.deadline.split('T')[0] : '',
         });
       } else {
         setError('获取作业信息失败');
