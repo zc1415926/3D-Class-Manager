@@ -131,8 +131,7 @@ function AssignmentNewPage() {
       // 创建作业
       const payload = {
         ...formData,
-        upload_types: uploadRequirements.map(r => r.upload_type),
-        deadline: formData.deadline || null
+        upload_types: uploadRequirements.map(r => r.upload_type)
       };
 
       const response = await axios.post('/api/assignments', payload);
@@ -365,6 +364,7 @@ function AssignmentNewPage() {
                 </div>
 
                 <div className="row mb-3">
+                  <div className="col-md-6">
                     <label className="form-label">状态</label>
                     <select
                       className="form-select"
@@ -470,12 +470,7 @@ function AssignmentNewPage() {
                     选择学生可以上传的文件类型。可以预设常用类型（STL、OBJ），也可以添加新的类型。
                   </div>
                 </div>
-                <div className="list-group-item">
-                  <div className="text-muted mb-1">截止日期</div>
-                  <div className="text-muted small">
-                    设置作业的截止日期，可选。设置后可以跟踪学生是否按时提交。
-                  </div>
-                </div>
+
                 <div className="list-group-item">
                   <div className="text-muted mb-1">状态管理</div>
                   <div className="text-muted small">
@@ -483,6 +478,10 @@ function AssignmentNewPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* 作业要求模态框 */}
       {showRequirementModal && (
         <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">

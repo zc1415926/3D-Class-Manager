@@ -90,7 +90,7 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const sql = `
       INSERT INTO assignments (year, name, upload_types, description, status)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+      VALUES ($1, $2, $3, $4, $5) RETURNING id
     `;
 
     const values = [
@@ -120,7 +120,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
   const { id } = req.params;
-  const { year, name, upload_types, description, status } = req.body;
+  const { year, name, upload_types, description, status, deadline } = req.body;
 
   // 验证必填字段
   if (!year || !name || !upload_types || !Array.isArray(upload_types)) {
@@ -141,6 +141,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       JSON.stringify(upload_types),
       description || null,
       deadline || null,
+      status || 'active',
       id
     ];
 

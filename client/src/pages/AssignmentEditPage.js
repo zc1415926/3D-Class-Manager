@@ -40,6 +40,7 @@ function AssignmentEditPage() {
           year: assignment.year,
           name: assignment.name,
           description: assignment.description || '',
+          status: assignment.status || 'active'
         });
       } else {
         setError('获取作业信息失败');
@@ -192,8 +193,7 @@ function AssignmentEditPage() {
     try {
       const payload = {
         ...formData,
-        upload_types: uploadRequirements.map(r => r.upload_type),
-        deadline: formData.deadline || null
+        upload_types: uploadRequirements.map(r => r.upload_type)
       };
 
       const response = await axios.put(`/api/assignments/${id}`, payload);
@@ -518,12 +518,7 @@ function AssignmentEditPage() {
                     为作业设置多个作业要求，每个要求可以指定名称、类型、是否必填和是否发布。学生需要按照这些要求分别提交文件。
                   </div>
                 </div>
-                <div className="list-group-item">
-                  <div className="text-muted mb-1">截止日期</div>
-                  <div className="text-muted small">
-                    设置作业的截止日期，可选。设置后可以跟踪学生是否按时提交。
-                  </div>
-                </div>
+
                 <div className="list-group-item">
                   <div className="text-muted mb-1">状态管理</div>
                   <div className="text-muted small">
@@ -532,6 +527,9 @@ function AssignmentEditPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
       {showRequirementModal && (
         <div className="modal modal-blur fade show" style={{ display: 'block' }} tabIndex="-1">
           <div className="modal-dialog modal-lg" role="document">
