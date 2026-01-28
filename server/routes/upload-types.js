@@ -12,16 +12,14 @@ router.get('/', async (req, res) => {
   try {
     const sql = `
       SELECT * FROM upload_types
-      WHERE is_active = true
       ORDER BY sort_order ASC, created_at ASC
     `;
 
     const result = await client.query(sql);
 
-    // 转换布尔值、扩展名数组和文件大小
+    // 转换扩展名数组和文件大小
     const uploadTypes = result.rows.map(row => ({
       ...row,
-      is_active: !!row.is_active,
       extensions: row.extensions ? row.extensions.split(',').map(ext => ext.trim()) : [],
       max_file_size: row.max_file_size || 52428800 // 默认50MB
     }));
@@ -58,7 +56,6 @@ router.get('/:id', async (req, res) => {
       success: true,
       data: {
         ...row,
-        is_active: !!row.is_active,
         extensions: row.extensions ? row.extensions.split(',').map(ext => ext.trim()) : [],
         max_file_size: row.max_file_size || 52428800 // 默认50MB
       }
@@ -74,7 +71,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
-  const { name, code, description, icon, extensions, max_file_size, sort_order } = req.body;
+  const { name, code, description, extensions, max_file_size, sort_order } = req.body;
 
   // 验证必填字段
   if (!name || !code) {
@@ -98,15 +95,14 @@ router.post('/', authenticateToken, async (req, res) => {
     const fileSize = max_file_size || 52428800; // 默认50MB
 
     const sql = `
-      INSERT INTO upload_types (name, code, description, icon, extensions, max_file_size, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+      INSERT INTO upload_types (name, code, description, extensions, max_file_size, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
     `;
 
     const values = [
       name,
       code,
       description || '',
-      icon || 'file',
       extensionsStr,
       fileSize,
       sort_order || 0
@@ -131,7 +127,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
   const { id } = req.params;
-  const { name, code, description, icon, is_active, extensions, max_file_size, sort_order } = req.body;
+  const { name, code, description, extensions, max_file_size, sort_order } = req.body;
 
   try {
     // 先检查上传类型是否存在
@@ -163,16 +159,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     const sql = `
       UPDATE upload_types
-      SET name = $1, code = $2, description = $3, icon = $4, is_active = $5, extensions = $6, max_file_size = $7, sort_order = $8
-      WHERE id = $9
+      SET name = $1, code = $2, description = $3, extensions = $4, max_file_size = $5, sort_order = $6
+      WHERE id = $7
     `;
 
     const values = [
       name,
       code,
       description || '',
-      icon || 'file',
-      is_active !== undefined ? (is_active ? 1 : 0) : 1,
       extensionsStr,
       fileSize,
       sort_order || 0,
@@ -190,7 +184,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// 删除上传类型（软删除）
+// 删除上传类型
 router.delete('/:id', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
@@ -211,8 +205,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    // 执行软删除（设置为不活跃）
-    const sql = 'UPDATE upload_types SET is_active = 0 WHERE id = $1';
+    // 执行删除
+    const sql = 'DELETE FROM upload_types WHERE id = $1';
 
     const result = await client.query(sql, [id]);
 

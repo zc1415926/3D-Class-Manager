@@ -140,16 +140,7 @@ function UploadTypesPage() {
     });
   };
 
-  const getIcon = (iconName) => {
-    const icons = {
-      'file': 'M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z',
-      'box': 'M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z',
-      'photo': 'M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z',
-      'file-text': 'M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z',
-      'video': 'M4 7v-1a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-1z'
-    };
-    return icons[iconName] || icons['file'];
-  };
+
 
   if (loading) {
     return (
@@ -241,8 +232,6 @@ function UploadTypesPage() {
                     <th>描述</th>
                     <th>扩展名</th>
                     <th>最大文件大小</th>
-                    <th>图标</th>
-                    <th>状态</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -275,17 +264,6 @@ function UploadTypesPage() {
                       <td>
                         <span className="text-muted">
                           {type.max_file_size ? `${Math.round(type.max_file_size / 1024 / 1024)} MB` : '50 MB (默认)'}
-                        </span>
-                      </td>
-                      <td>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                          <path d={getIcon(type.icon)} />
-                        </svg>
-                      </td>
-                      <td>
-                        <span className={`badge ${type.is_active ? 'bg-success' : 'bg-secondary'}`}>
-                          {type.is_active ? '活跃' : '禁用'}
                         </span>
                       </td>
                       <td>

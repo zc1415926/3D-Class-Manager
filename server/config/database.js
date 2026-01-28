@@ -98,10 +98,8 @@ const createPostgreSQLTables = async (client) => {
         name VARCHAR(100) NOT NULL UNIQUE,
         code VARCHAR(50) NOT NULL UNIQUE,
         description TEXT,
-        icon VARCHAR(50),
         extensions TEXT,
         max_file_size INTEGER DEFAULT 52428800, -- 50MB default
-        is_active BOOLEAN DEFAULT TRUE,
         sort_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -170,17 +168,17 @@ const initPostgreSQLData = async (client) => {
     const uploadTypeCount = await client.query('SELECT COUNT(*) as count FROM upload_types');
     if (parseInt(uploadTypeCount.rows[0].count) === 0) {
       const defaultUploadTypes = [
-        { name: 'STL模型', code: 'stl', description: '3D打印模型文件', icon: 'box', extensions: '.stl', sort_order: 1 },
-        { name: 'OBJ模型', code: 'obj', description: '3D对象文件', icon: 'box', extensions: '.obj', sort_order: 2 },
-        { name: '图片', code: 'image', description: '图片文件（JPG、PNG等）', icon: 'photo', extensions: '.jpg,.jpeg,.png,.gif,.webp', sort_order: 3 },
-        { name: '文档', code: 'document', description: '文档文件（PDF、DOC等）', icon: 'file-text', extensions: '.pdf,.doc,.docx,.txt', sort_order: 4 },
-        { name: '视频', code: 'video', description: '视频文件', icon: 'video', extensions: '.mp4,.avi,.mov,.mkv', sort_order: 5 }
+        { name: 'STL模型', code: 'stl', description: '3D打印模型文件', extensions: '.stl', sort_order: 1 },
+        { name: 'OBJ模型', code: 'obj', description: '3D对象文件', extensions: '.obj', sort_order: 2 },
+        { name: '图片', code: 'image', description: '图片文件（JPG、PNG等）', extensions: '.jpg,.jpeg,.png,.gif,.webp', sort_order: 3 },
+        { name: '文档', code: 'document', description: '文档文件（PDF、DOC等）', extensions: '.pdf,.doc,.docx,.txt', sort_order: 4 },
+        { name: '视频', code: 'video', description: '视频文件', extensions: '.mp4,.avi,.mov,.mkv', sort_order: 5 }
       ];
 
       for (const type of defaultUploadTypes) {
         await client.query(
-          'INSERT INTO upload_types (name, code, description, icon, extensions, sort_order) VALUES ($1, $2, $3, $4, $5, $6)',
-          [type.name, type.code, type.description, type.icon, type.extensions, type.sort_order]
+          'INSERT INTO upload_types (name, code, description, extensions, sort_order) VALUES ($1, $2, $3, $4, $5)',
+          [type.name, type.code, type.description, type.extensions, type.sort_order]
         );
       }
 
