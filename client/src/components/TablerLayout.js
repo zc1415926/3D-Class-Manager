@@ -46,14 +46,14 @@ const TablerLayout = ({ children }) => {
             icon: 'list'
           },
           {
-            title: '学生管理',
-            path: '/student-management',
-            icon: 'users'
-          },
-          {
             title: '作业类型管理',
             path: '/upload-types',
             icon: 'list-details'
+          },
+          {
+            title: '学生管理',
+            path: '/student-management',
+            icon: 'users'
           }
         ]
       }

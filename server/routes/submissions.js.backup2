@@ -8,39 +8,28 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // 获取三级文件夹路径的辅助函数
-function getUploadPath(assignmentId, studentYear, isThumbnail = false, submissionId = null, useTemp = false) {
-  // 如果没有assignmentId，使用临时路径
+function getUploadPath(assignmentId, studentYear, isThumbnail = false) {
+  // 如果没有assignmentId，使用默认路径
   if (!assignmentId) {
-    return path.join(__dirname, isThumbnail ? '../uploads/temp' : '../uploads/temp');
+    return path.join(__dirname, isThumbnail ? '../thumbnails/default' : '../uploads/default');
   }
   
-  // 根据assignmentId、studentYear创建基础路径
-  const basePath = path.join(__dirname, isThumbnail ? '../uploads' : '../uploads', studentYear.toString(), assignmentId.toString());
-  
-  // 如果指定了submissionId，创建最终路径：uploads/年份/assignmentId/submissionId/
-  // 如果useTemp为true，创建临时路径：uploads/年份/assignmentId/temp/
-  if (submissionId) {
-    return path.join(basePath, submissionId.toString());
-  } else if (useTemp) {
-    return path.join(basePath, 'temp');
-  }
-  
-  return basePath;
+  // 根据assignmentId、studentYear创建三级文件夹路径
+  return path.join(__dirname, isThumbnail ? '../thumbnails' : '../uploads', studentYear.toString(), assignmentId.toString());
 }
 
 // 配置文件上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadDir;
-    const assignmentId = req.body.assignmentId || 'temp';
+    const assignmentId = req.body.assignmentId || 'general';
     const studentYear = req.body.studentYear || new Date().getFullYear();
     
     // 支持多种字段名：stlFile, files[], thumbnails[]
-    // 先上传到临时目录，创建submission后再移动到最终目录
     if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
-      uploadDir = getUploadPath(assignmentId, studentYear, false, null, true);
+      uploadDir = getUploadPath(assignmentId, studentYear, false);
     } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
-      uploadDir = getUploadPath(assignmentId, studentYear, true, null, true);
+      uploadDir = getUploadPath(assignmentId, studentYear, true);
     } else {
       return cb(new Error('未知的文件字段'));
     }
@@ -52,26 +41,26 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const assignmentId = req.body.assignmentId || 'temp';
+    const assignmentId = req.body.assignmentId || 'general';
     const studentYear = req.body.studentYear || new Date().getFullYear();
     
     if (file.fieldname === 'stlFile' || file.fieldname.startsWith('files[')) {
       cb(null, `${studentYear}_${assignmentId}_${uniqueSuffix}${path.extname(file.originalname)}`);
     } else if (file.fieldname === 'thumbnail' || file.fieldname.startsWith('thumbnails[')) {
       // 生成与主文件对应的缩略图文件名
-      // 如果主文件是 studentYear_assignmentId_filename.ext 格式，缩略图使用 studentYear_assignmentId_filename_thumbnail.jpg
+      // 如果主文件是 studentYear_assignmentId_filename.ext 格式，缩略图使用 studentYear_assignmentId_filename_thumbnail.png
       let baseFilename = `${studentYear}_${assignmentId}_${uniqueSuffix}`;
       
       // 如果是从前端传递的缩略图（已包含原始文件名信息），尝试解析出原始文件名
-      if(file.originalname && typeof file.originalname === 'string' && file.originalname.includes && file.originalname.includes('_thumbnail.jpg')) {
-        // 处理前端生成的缩略图文件名（如 originalname_thumbnail.jpg）
-        const originalBase = file.originalname && typeof file.originalname === 'string' ? file.originalname.replace('_thumbnail.jpg', '') : '';
-        if(originalBase && originalBase !== file.originalname) {
+      if(file.originalname.includes('_thumbnail.png')) {
+        // 处理前端生成的缩略图文件名（如 originalname_thumbnail.png）
+        const originalBase = file.originalname.replace('_thumbnail.png', '');
+        if(originalBase !== file.originalname) {
           baseFilename = originalBase;
         }
       }
       
-      cb(null, `${baseFilename}_thumbnail.jpg`);
+      cb(null, `${baseFilename}_thumbnail.png`);
     }
   }
 });
@@ -166,40 +155,10 @@ router.post('/', upload.any(), async (req, res) => {
       const submissionId = result.rows[0].id;
       const files = [];
 
-      // 辅助函数：将文件从临时目录移动到最终目录
-      async function moveFileToFinalPath(filePath, assignmentId, studentYear, submissionId, isThumbnail = false) {
-        if (!filePath) return null;
-        
-        const tempDir = getUploadPath(assignmentId, studentYear, isThumbnail, null, true);
-        const finalDir = getUploadPath(assignmentId, studentYear, isThumbnail, submissionId, false);
-        
-        // 确保最终目录存在
-        if (!fs.existsSync(finalDir)) {
-          fs.mkdirSync(finalDir, { recursive: true });
-        }
-        
-        // 获取文件名
-        const filename = path.basename(filePath);
-        const finalPath = path.join(finalDir, filename);
-        
-        try {
-          // 移动文件
-          await fs.promises.rename(filePath, finalPath);
-          return finalPath;
-        } catch (error) {
-          console.error(`移动文件失败: ${filePath} -> ${finalPath}`, error);
-          throw error;
-        }
-      }
-
       // 处理单文件上传模式
       if (stlFile.length > 0) {
         const mainFile = stlFile[0];
         const mainThumbnail = thumbnailFile.length > 0 ? thumbnailFile[0] : null;
-
-        // 将文件从临时目录移动到最终目录
-        const finalFilePath = await moveFileToFinalPath(mainFile.path, assignmentId, studentYear, submissionId, false);
-        const finalThumbnailPath = mainThumbnail ? await moveFileToFinalPath(mainThumbnail.path, assignmentId, studentYear, submissionId, true) : null;
 
         const fileResult = await client.query(
           `INSERT INTO submission_files (submission_id, filename, filepath, thumbnail_path, is_primary, file_type)
@@ -208,16 +167,16 @@ router.post('/', upload.any(), async (req, res) => {
           [
             submissionId,
             mainFile.filename,
-            finalFilePath,
-            finalThumbnailPath
+            mainFile.path,
+            mainThumbnail ? mainThumbnail.path : null
           ]
         );
 
         files.push({
           id: fileResult.rows[0].id,
           filename: mainFile.filename,
-          filepath: finalFilePath,
-          thumbnail_path: finalThumbnailPath,
+          filepath: mainFile.path,
+          thumbnail_path: mainThumbnail ? mainThumbnail.path : null,
           is_primary: true
         });
       }
@@ -240,34 +199,7 @@ router.post('/', upload.any(), async (req, res) => {
           const file = filesArray[index];
           if (file) { // 确保文件存在
             const requirementId = requirementIdsArray && requirementIdsArray[index] ? parseInt(requirementIdsArray[index]) : null;
-            let thumbnailFile = thumbnailsArray[index] || null;
-            
-            // 如果存在对应的缩略图，重命名缩略图文件使其与对应文件名相关联
-            if (thumbnailFile) {
-              try {
-                // 从原文件名中提取基础名称（不含扩展名）
-                const originalBasename = path.basename(file.filename, path.extname(file.filename));
-                // 创建新的缩略图文件名，基于对应文件名
-                const newThumbnailFilename = `${originalBasename}_thumbnail.jpg`;
-                const newThumbnailPath = path.join(path.dirname(thumbnailFile.path), newThumbnailFilename);
-                
-                // 重命名缩略图文件
-                await fs.promises.rename(thumbnailFile.path, newThumbnailPath);
-                
-                // 更新thumbnailFile对象的属性
-                thumbnailFile.filename = newThumbnailFilename;
-                thumbnailFile.path = newThumbnailPath;
-                
-                console.log(`缩略图已重命名为: ${newThumbnailFilename}`);
-              } catch (renameError) {
-                console.error(`重命名缩略图失败:`, renameError);
-                // 如果重命名失败，继续使用原始缩略图文件
-              }
-            }
-
-            // 将文件从临时目录移动到最终目录
-            const finalFilePath = await moveFileToFinalPath(file.path, assignmentId, studentYear, submissionId, false);
-            const finalThumbnailPath = thumbnailFile ? await moveFileToFinalPath(thumbnailFile.path, assignmentId, studentYear, submissionId, true) : null;
+            const thumbnailFile = thumbnailsArray[index] || null;
 
             const fileResult = await client.query(
               `INSERT INTO submission_files (submission_id, requirement_id, filename, filepath, thumbnail_path, sort_order, file_type)
@@ -277,8 +209,8 @@ router.post('/', upload.any(), async (req, res) => {
                 submissionId,
                 requirementId,
                 file.filename,
-                finalFilePath,
-                finalThumbnailPath,
+                file.path,
+                thumbnailFile ? thumbnailFile.path : null,
                 index
               ]
             );
@@ -287,8 +219,8 @@ router.post('/', upload.any(), async (req, res) => {
               id: fileResult.rows[0].id,
               requirement_id: requirementId,
               filename: file.filename,
-              filepath: finalFilePath,
-              thumbnail_path: finalThumbnailPath,
+              filepath: file.path,
+              thumbnail_path: thumbnailFile ? thumbnailFile.path : null,
               sort_order: index
             });
           }
@@ -360,8 +292,7 @@ router.get('/', async (req, res) => {
         
         let thumbnailPath = null;
         if (fileResult.rows.length > 0 && fileResult.rows[0].thumbnail_path) {
-          const relativePath = fileResult.rows[0].thumbnail_path.replace(path.join(__dirname, '../uploads'), '');
-          thumbnailPath = `/uploads${relativePath}`;
+          thumbnailPath = `/thumbnails/${path.basename(fileResult.rows[0].thumbnail_path)}`;
         }
 
         submissions.push({
@@ -475,8 +406,8 @@ router.get('/:id', async (req, res) => {
       let filePath = null;
       
       if (primaryFile) {
-        thumbnailPath = primaryFile.thumbnail_path ? `/uploads${primaryFile.thumbnail_path.replace(path.join(__dirname, '../uploads'), '')}` : null;
-        filePath = primaryFile.filepath ? `/uploads${primaryFile.filepath.replace(path.join(__dirname, '../uploads'), '')}` : null;
+        thumbnailPath = primaryFile.thumbnail_path ? `/thumbnails/${path.basename(primaryFile.thumbnail_path)}` : null;
+        filePath = primaryFile.filepath;
       }
 
       const submission = {
@@ -492,8 +423,8 @@ router.get('/:id', async (req, res) => {
           id: file.id,
           requirement_id: file.requirement_id,
           filename: file.filename,
-          filepath: file.filepath ? `/uploads${file.filepath.replace(path.join(__dirname, '../uploads'), '')}` : null,
-          thumbnail_path: file.thumbnail_path ? `/uploads${file.thumbnail_path.replace(path.join(__dirname, '../uploads'), '')}` : null,
+          filepath: file.filepath,
+          thumbnail_path: file.thumbnail_path ? `/thumbnails/${path.basename(file.thumbnail_path)}` : null,
           is_primary: file.is_primary,
           sort_order: file.sort_order,
           file_type: file.file_type

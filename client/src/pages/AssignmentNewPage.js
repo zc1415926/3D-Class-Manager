@@ -27,6 +27,7 @@ function AssignmentNewPage() {
   const [showRequirementModal, setShowRequirementModal] = useState(false);
   const [editingRequirement, setEditingRequirement] = useState(null);
   const [tempAssignmentId, setTempAssignmentId] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]); // 记录CKEditor上传的文件
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -154,6 +155,21 @@ function AssignmentNewPage() {
         }
 
         setSuccess('作业创建成功！');
+        
+        // 如果有上传的文件，移动它们到新的目录
+        if (uploadedFiles.length > 0) {
+          try {
+            await axios.post(`/api/assignments/${assignmentId}/move-uploaded-files`, {
+              files: uploadedFiles,
+              year: formData.year
+            });
+            console.log(`成功移动 ${uploadedFiles.length} 个文件到作业目录`);
+          } catch (moveError) {
+            console.error('移动文件失败:', moveError);
+            // 不阻止作业创建成功，只是记录错误
+          }
+        }
+        
         setTimeout(() => {
           navigate('/assignments');
         }, 1500);
@@ -390,7 +406,19 @@ function AssignmentNewPage() {
                       }}
                       onReady={(editor) => {
                         editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
-                          return new UploadAdapter(loader);
+                          const adapter = new UploadAdapter(loader);
+                          // 拦截上传成功后的回调，记录上传的文件
+                          const originalUpload = adapter.upload.bind(adapter);
+                          adapter.upload = () => {
+                            return originalUpload().then(result => {
+                              // 记录上传的文件URL
+                              if (result && result.default) {
+                                setUploadedFiles(prev => [...prev, result.default]);
+                              }
+                              return result;
+                            });
+                          };
+                          return adapter;
                         };
                       }}
                       config={{

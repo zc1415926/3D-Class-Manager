@@ -24,7 +24,7 @@
   - 用户管理
   - 修改密码功能
 - **数据库支持**：
-  - 支持PostgreSQL（生产环境）  - 一键切换数据库类型
+  - 支持PostgreSQL（生产环境） 
 
 ### 技术栈
 - **前端**：React 18, React Router, Bootstrap 5, Babylon.js, Axios, Tabler UI, CKEditor

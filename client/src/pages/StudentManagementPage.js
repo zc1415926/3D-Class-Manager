@@ -13,7 +13,12 @@ function StudentManagementPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
-  const [formData, setFormData] = useState({ name: '', year: currentYear.toString() });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    year: currentYear.toString(),
+    grade: '',
+    class_number: '1'
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,7 +88,12 @@ function StudentManagementPage() {
 
   const handleEdit = (student) => {
     setEditingStudent(student);
-    setFormData({ name: student.name, year: student.year });
+    setFormData({ 
+      name: student.name, 
+      year: student.year,
+      grade: student.grade || '一',
+      class_number: student.class_number ? student.class_number.toString() : '1'
+    });
     setShowEditModal(true);
   };
 
@@ -105,7 +115,12 @@ function StudentManagementPage() {
     setShowAddModal(false);
     setShowEditModal(false);
     setEditingStudent(null);
-    setFormData({ name: '', year: currentYear.toString() });
+    setFormData({ 
+      name: '', 
+      year: currentYear.toString(),
+      grade: '',
+      class_number: '1'
+    });
   };
 
   return (
@@ -188,6 +203,8 @@ function StudentManagementPage() {
                   <tr>
                     <th className="w-1">ID</th>
                     <th>姓名</th>
+                    <th>年级</th>
+                    <th>班级</th>
                     <th>年份</th>
                     <th>创建时间</th>
                     <th>操作</th>
@@ -206,7 +223,13 @@ function StudentManagementPage() {
                         </div>
                       </td>
                       <td>
-                        <span className="badge bg-info-lt">{student.year}</span>
+                        {student.grade || '一'}年级
+                      </td>
+                      <td>
+                        {student.class_number || 1}班
+                      </td>
+                      <td>
+                        {student.year}
                       </td>
                       <td className="text-muted">
                         {new Date(student.createdAt).toLocaleString('zh-CN')}
@@ -262,7 +285,7 @@ function StudentManagementPage() {
               <div className="modal-body">
                 <form onSubmit={handleAddSubmit} autoComplete="off">
                   <div className="mb-3">
-                    <label className="form-label">姓名</label>
+                    <label className="form-label">姓名 <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       className="form-control"
@@ -272,8 +295,40 @@ function StudentManagementPage() {
                       placeholder="请输入学生姓名"
                     />
                   </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">年级 <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={formData.grade}
+                        onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                        required
+                      >
+                        <option value="">请选择年级</option>
+                        <option value="一">一年级</option>
+                        <option value="二">二年级</option>
+                        <option value="三">三年级</option>
+                        <option value="四">四年级</option>
+                        <option value="五">五年级</option>
+                        <option value="六">六年级</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">班级 <span className="text-danger">*</span></label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={formData.class_number}
+                        onChange={(e) => setFormData({ ...formData, class_number: e.target.value })}
+                        required
+                        min="1"
+                        max="20"
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
                   <div className="mb-3">
-                    <label className="form-label">年份</label>
+                    <label className="form-label">年份 <span className="text-danger">*</span></label>
                     <input
                       type="number"
                       className="form-control"
@@ -311,7 +366,7 @@ function StudentManagementPage() {
               <div className="modal-body">
                 <form onSubmit={handleEditSubmit} autoComplete="off">
                   <div className="mb-3">
-                    <label className="form-label">姓名</label>
+                    <label className="form-label">姓名 <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       className="form-control"
@@ -321,8 +376,40 @@ function StudentManagementPage() {
                       placeholder="请输入学生姓名"
                     />
                   </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">年级 <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        value={formData.grade}
+                        onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                        required
+                      >
+                        <option value="">请选择年级</option>
+                        <option value="一">一年级</option>
+                        <option value="二">二年级</option>
+                        <option value="三">三年级</option>
+                        <option value="四">四年级</option>
+                        <option value="五">五年级</option>
+                        <option value="六">六年级</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">班级 <span className="text-danger">*</span></label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={formData.class_number}
+                        onChange={(e) => setFormData({ ...formData, class_number: e.target.value })}
+                        required
+                        min="1"
+                        max="20"
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
                   <div className="mb-3">
-                    <label className="form-label">年份</label>
+                    <label className="form-label">年份 <span className="text-danger">*</span></label>
                     <input
                       type="number"
                       className="form-control"

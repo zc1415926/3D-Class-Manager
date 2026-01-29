@@ -39,7 +39,7 @@ function AssignmentSubmissionsPage() {
       // 获取该作业的所有提交
       const submissionsRes = await axios.get(`/api/assignments/${id}/submissions`);
       if (submissionsRes.data.success) {
-        // 处理数据，转换绝对路径为相对路径
+        // 处理数据，转换字段名
         const processedSubmissions = submissionsRes.data.data.map(sub => ({
           ...sub,
           studentName: sub.student_name,
@@ -47,8 +47,8 @@ function AssignmentSubmissionsPage() {
           workName: sub.work_name,
           description: sub.description,
           filename: sub.filename,
-          filePath: `/uploads/${sub.filename}`,
-          thumbnailPath: sub.thumbnail_path ? `/thumbnails/${sub.thumbnail_path.split('/').pop()}` : null,
+          filePath: sub.filePath || null,
+          thumbnailPath: sub.thumbnail_path || null,
           createdAt: sub.created_at,
           assignmentId: sub.assignment_id
         }));

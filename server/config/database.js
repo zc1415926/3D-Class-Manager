@@ -190,6 +190,41 @@ const createPostgreSQLTables = async (client) => {
       )
     `);
 
+    // 检查并更新students表结构（添加grade和class_number字段）
+    try {
+      // 检查grade字段是否存在
+      const gradeColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='students' AND column_name='grade'
+      `);
+      
+      if (gradeColumn.rows.length === 0) {
+        await client.query(`
+          ALTER TABLE students 
+          ADD COLUMN grade VARCHAR(10) DEFAULT '一'
+        `);
+        console.log('已添加grade字段到students表（默认"一"）');
+      }
+
+      // 检查class_number字段是否存在
+      const classNumberColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='students' AND column_name='class_number'
+      `);
+      
+      if (classNumberColumn.rows.length === 0) {
+        await client.query(`
+          ALTER TABLE students 
+          ADD COLUMN class_number INTEGER DEFAULT 1
+        `);
+        console.log('已添加class_number字段到students表（默认1）');
+      }
+    } catch (error) {
+      console.error('更新students表结构时出错:', error);
+    }
+
     console.log('PostgreSQL表结构已创建');
   } catch (error) {
     console.error('创建PostgreSQL表失败:', error);

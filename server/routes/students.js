@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     const client = await db.connect();
 
     const result = await client.query(`
-      SELECT id, name, year, created_at
+      SELECT id, name, year, grade, class_number, created_at
       FROM students
       ORDER BY year DESC, name ASC
     `);
@@ -22,6 +22,8 @@ router.get('/', async (req, res) => {
       id: row.id,
       name: row.name,
       year: row.year,
+      grade: row.grade || '一',
+      class_number: row.class_number || 1,
       createdAt: row.created_at
     }));
 
@@ -35,7 +37,7 @@ router.get('/', async (req, res) => {
 // 添加学生
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, year } = req.body;
+    const { name, year, grade, class_number } = req.body;
 
     if (!name || !year) {
       return res.status(400).json({ error: '学生姓名和年份不能为空' });
@@ -45,8 +47,8 @@ router.post('/', authenticateToken, async (req, res) => {
     const client = await db.connect();
 
     const result = await client.query(
-      'INSERT INTO students (name, year) VALUES ($1, $2) RETURNING id',
-      [name, year]
+      'INSERT INTO students (name, year, grade, class_number) VALUES ($1, $2, $3, $4) RETURNING id',
+      [name, year, grade || '一', class_number || 1]
     );
 
     client.release();
@@ -57,7 +59,9 @@ router.post('/', authenticateToken, async (req, res) => {
       data: {
         id: result.rows[0].id,
         name,
-        year
+        year,
+        grade: grade || '一',
+        class_number: class_number || 1
       }
     });
   } catch (error) {
@@ -69,7 +73,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // 更新学生信息
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { name, year } = req.body;
+    const { name, year, grade, class_number } = req.body;
     const studentId = req.params.id;
 
     if (!name || !year) {
@@ -80,8 +84,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const client = await db.connect();
 
     const result = await client.query(
-      'UPDATE students SET name = $1, year = $2 WHERE id = $3',
-      [name, year, studentId]
+      'UPDATE students SET name = $1, year = $2, grade = $3, class_number = $4 WHERE id = $5',
+      [name, year, grade || '一', class_number || 1, studentId]
     );
 
     client.release();
@@ -96,7 +100,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: {
         id: studentId,
         name,
-        year
+        year,
+        grade: grade || '一',
+        class_number: class_number || 1
       }
     });
   } catch (error) {

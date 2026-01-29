@@ -334,15 +334,65 @@ router.get('/:id/submissions', async (req, res) => {
 
   try {
     const sql = `
-      SELECT * FROM submissions
-      WHERE assignment_id = $1
-      ORDER BY created_at DESC
+      SELECT s.*,
+             sf.id as file_id, sf.filename, sf.filepath, sf.thumbnail_path,
+             sf.is_primary, sf.sort_order
+      FROM submissions s
+      LEFT JOIN submission_files sf ON s.id = sf.submission_id
+      WHERE s.assignment_id = $1
+      ORDER BY s.created_at DESC, sf.is_primary DESC, sf.sort_order
     `;
 
     const result = await client.query(sql, [id]);
+    
+    // 处理数据，将文件路径转换为相对路径
+    const submissions = [];
+    let currentSubmission = null;
+    
+    for (const row of result.rows) {
+      // 如果是新的提交记录
+      if (!currentSubmission || currentSubmission.id !== row.id) {
+        if (currentSubmission) {
+          submissions.push(currentSubmission);
+        }
+        
+        currentSubmission = {
+          id: row.id,
+          student_name: row.student_name,
+          student_year: row.student_year,
+          work_name: row.work_name,
+          description: row.description,
+          filename: row.filename,
+          filePath: null,
+          thumbnail_path: null,
+          created_at: row.created_at,
+          assignment_id: row.assignment_id
+        };
+      }
+      
+      // 如果当前行有文件数据
+      if (row.file_id) {
+        // 使用primary文件或第一个文件作为主要文件
+        if (row.is_primary || !currentSubmission.filePath) {
+          if (row.filepath) {
+            const relativePath = row.filepath.replace(path.join(__dirname, '../uploads'), '');
+            currentSubmission.filePath = `/uploads${relativePath}`;
+          }
+          if (row.thumbnail_path) {
+            const relativeThumbPath = row.thumbnail_path.replace(path.join(__dirname, '../uploads'), '');
+            currentSubmission.thumbnail_path = `/uploads${relativeThumbPath}`;
+          }
+        }
+      }
+    }
+    
+    // 添加最后一个提交
+    if (currentSubmission) {
+      submissions.push(currentSubmission);
+    }
 
     client.release();
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: submissions });
   } catch (error) {
     console.error('获取作业提交失败:', error);
     client.release();
@@ -710,6 +760,107 @@ router.get('/:id/export', authenticateToken, async (req, res) => {
     console.error('[EXPORT] 导出失败:', error);
     client.release();
     res.status(500).json({ success: false, error: '导出失败' });
+  }
+});
+
+// 移动新建作业时上传的文件到正确的目录
+// 将文件从 temp/article 移动到 {assignmentId}/article
+router.post('/:id/move-uploaded-files', authenticateToken, async (req, res) => {
+  const db = getDatabase();
+  const client = await db.connect();
+  const { id } = req.params;
+  const { files, year } = req.body;
+
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    client.release();
+    return res.json({ success: true, message: '没有文件需要移动' });
+  }
+
+  try {
+    const movedFiles = [];
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    // 确保目标目录存在
+    const targetDir = path.join(__dirname, '../uploads', year.toString(), id.toString(), 'article');
+    await fs.mkdir(targetDir, { recursive: true });
+
+    for (const fileUrl of files) {
+      try {
+        // 解析文件URL，提取路径
+        // URL格式: /uploads/年份/assignmentId/article/filename 或 /uploads/年份/temp/article/filename
+        const urlParts = fileUrl.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const oldAssignmentId = urlParts[urlParts.length - 3]; // article前面的部分
+        
+        // 只有当文件在temp目录中时才需要移动
+        if (oldAssignmentId === 'temp') {
+          const oldDir = path.join(__dirname, '../uploads', year.toString(), 'temp', 'article');
+          const oldPath = path.join(oldDir, filename);
+          const newPath = path.join(targetDir, filename);
+          
+          // 检查文件是否存在
+          try {
+            await fs.access(oldPath);
+            // 移动文件
+            await fs.rename(oldPath, newPath);
+            movedFiles.push({
+              oldUrl: fileUrl,
+              newUrl: `/uploads/${year}/${id}/article/${filename}`
+            });
+            console.log(`文件移动成功: ${oldPath} -> ${newPath}`);
+          } catch (fileError) {
+            console.error(`文件不存在或无法移动: ${oldPath}`, fileError);
+            // 文件可能已经被移动或不存在，跳过
+          }
+        } else {
+          // 文件已经在正确的目录中，不需要移动
+          movedFiles.push({
+            oldUrl: fileUrl,
+            newUrl: fileUrl
+          });
+        }
+      } catch (parseError) {
+        console.error(`解析文件URL失败: ${fileUrl}`, parseError);
+      }
+    }
+
+    // 如果有文件被移动，更新作业描述中的URL
+    if (movedFiles.length > 0) {
+      const assignmentResult = await client.query(
+        'SELECT description FROM assignments WHERE id = $1',
+        [id]
+      );
+      
+      if (assignmentResult.rows.length > 0) {
+        let description = assignmentResult.rows[0].description || '';
+        
+        // 替换描述中的所有旧URL为新URL
+        for (const file of movedFiles) {
+          if (file.oldUrl !== file.newUrl) {
+            const oldUrlRegex = new RegExp(file.oldUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+            description = description.replace(oldUrlRegex, file.newUrl);
+          }
+        }
+        
+        // 更新作业描述
+        await client.query(
+          'UPDATE assignments SET description = $1 WHERE id = $2',
+          [description, id]
+        );
+      }
+    }
+
+    client.release();
+    res.json({
+      success: true,
+      message: `成功移动 ${movedFiles.filter(f => f.oldUrl !== f.newUrl).length} 个文件`,
+      movedFiles: movedFiles
+    });
+  } catch (error) {
+    console.error('移动文件失败:', error);
+    client.release();
+    res.status(500).json({ success: false, error: '移动文件失败' });
   }
 });
 
