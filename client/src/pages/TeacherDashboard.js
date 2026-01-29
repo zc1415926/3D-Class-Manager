@@ -201,6 +201,26 @@ function TeacherDashboard() {
               </div>
             </div>
           </div>
+          <div className="list-group-item" onClick={() => navigate('/works')}>
+            <div className="row align-items-center">
+              <div className="col-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" />
+                </svg>
+              </div>
+              <div className="col text-truncate">
+                <span className="text-reset d-block">作品评分</span>
+                <div className="d-block text-muted text-truncate mt-n1">为学生的3D作品进行评分（S/A/B/C/O等级）</div>
+              </div>
+              <div className="col-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 6l6 6l-6 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
           <div className="list-group-item" onClick={() => navigate('/assignments')}>
             <div className="row align-items-center">
               <div className="col-auto">

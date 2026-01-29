@@ -388,16 +388,19 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 评分提交
-router.put('/:id/grade', authenticateToken, async (req, res) => {
+// 评分提交（文件级别）
+router.put('/files/:fileId/grade', authenticateToken, async (req, res) => {
   const db = getDatabase();
   const client = await db.connect();
-  const { id } = req.params;
+  const { fileId } = req.params;
   const { score, grade } = req.body;
   const userId = req.user.id;
 
+  console.log(`[评分API] 收到文件评分请求: fileId=${fileId}, score=${score}, grade=${grade}, userId=${userId}`);
+
   // 验证评分数据
   if (score === undefined || grade === undefined) {
+    console.error('[评分API] 缺少评分数据');
     client.release();
     return res.status(400).json({ success: false, error: '缺少评分数据' });
   }
@@ -405,41 +408,60 @@ router.put('/:id/grade', authenticateToken, async (req, res) => {
   // 验证评分等级是否有效
   const validGrades = ['S', 'A', 'B', 'C', 'O'];
   if (!validGrades.includes(grade)) {
+    console.error(`[评分API] 无效的评分等级: ${grade}`);
     client.release();
     return res.status(400).json({ success: false, error: '无效的评分等级' });
   }
 
   try {
-    // 获取当前提交信息
-    const submissionResult = await client.query(
-      'SELECT * FROM submissions WHERE id = $1', 
-      [id]
+    // 先查询当前数据
+    const beforeResult = await client.query(
+      'SELECT * FROM submission_files WHERE id = $1',
+      [fileId]
     );
-
-    if (submissionResult.rows.length === 0) {
+    
+    if (beforeResult.rows.length === 0) {
+      console.error('[评分API] 文件不存在');
       client.release();
-      return res.status(404).json({ success: false, error: '提交不存在' });
+      return res.status(404).json({ success: false, error: '文件不存在' });
     }
+    
+    console.log(`[评分API] 更新前数据:`, beforeResult.rows[0]);
 
     // 更新评分
     const updateResult = await client.query(`
-      UPDATE submissions 
-      SET score = $1, grade = $2, grader_id = $3, graded_at = CURRENT_TIMESTAMP 
-      WHERE id = $4 
+      UPDATE submission_files
+      SET score = $1, grade = $2, grader_id = $3, graded_at = CURRENT_TIMESTAMP
+      WHERE id = $4
       RETURNING *
-    `, [score, grade, userId, id]);
+    `, [score, grade, userId, fileId]);
+
+    console.log(`[评分API] 更新后数据:`, updateResult.rows[0]);
+    console.log(`[评分API] 更新行数:`, updateResult.rowCount);
 
     client.release();
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: updateResult.rows[0],
-      message: '评分成功' 
+      message: '评分成功'
     });
   } catch (error) {
-    console.error('评分提交失败:', error);
+    console.error('[评分API] 评分提交失败:', error);
+    console.error('[评分API] 错误详情:', error.message, error.stack);
     client.release();
     res.status(500).json({ success: false, error: '评分提交失败' });
   }
+});
+
+// 向后兼容：保留原有的评分路由，但会返回错误提示
+router.put('/:id/grade', authenticateToken, async (req, res) => {
+  console.log(`[评分API] 收到旧的评分请求: ID=${req.params.id}`);
+  console.log(`[评分API] 警告：请使用新的文件级别评分路由: /api/submissions/files/:fileId/grade`);
+  
+  res.status(400).json({
+    success: false,
+    error: '评分API已更新，请使用新的文件级别评分路由：/api/submissions/files/:fileId/grade'
+  });
 });
 
 // 获取单个作品详情
@@ -496,7 +518,11 @@ router.get('/:id', async (req, res) => {
           thumbnail_path: file.thumbnail_path ? `/uploads${file.thumbnail_path.replace(path.join(__dirname, '../uploads'), '')}` : null,
           is_primary: file.is_primary,
           sort_order: file.sort_order,
-          file_type: file.file_type
+          file_type: file.file_type,
+          score: file.score,
+          grade: file.grade,
+          grader_id: file.grader_id,
+          graded_at: file.graded_at
         })),
         createdAt: row.created_at
       };
@@ -521,16 +547,42 @@ router.get('/by-assignment/:assignmentId', async (req, res) => {
 
   try {
     const result = await client.query(`
-      SELECT s.*, 
-             u.username as grader_name
+      SELECT s.*
       FROM submissions s
-      LEFT JOIN users u ON s.grader_id = u.id
       WHERE s.assignment_id = $1
       ORDER BY s.created_at DESC
     `, [assignmentId]);
 
+    // 为每个 submission 获取文件信息和评分
+    const submissionsWithFiles = await Promise.all(
+      result.rows.map(async (submission) => {
+        const filesResult = await client.query(
+          `SELECT * FROM submission_files WHERE submission_id = $1 ORDER BY is_primary DESC, sort_order`,
+          [submission.id]
+        );
+
+        return {
+          ...submission,
+          files: filesResult.rows.map(file => ({
+            id: file.id,
+            requirement_id: file.requirement_id,
+            filename: file.filename,
+            filepath: file.filepath ? `/uploads${file.filepath.replace(path.join(__dirname, '../uploads'), '')}` : null,
+            thumbnail_path: file.thumbnail_path ? `/uploads${file.thumbnail_path.replace(path.join(__dirname, '../uploads'), '')}` : null,
+            is_primary: file.is_primary,
+            sort_order: file.sort_order,
+            file_type: file.file_type,
+            score: file.score,
+            grade: file.grade,
+            grader_id: file.grader_id,
+            graded_at: file.graded_at
+          }))
+        };
+      })
+    );
+
     client.release();
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: submissionsWithFiles });
   } catch (error) {
     console.error('获取作业提交失败:', error);
     client.release();

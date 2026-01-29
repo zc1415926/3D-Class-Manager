@@ -1,26 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import GradeSubmissionModal from '../components/GradeSubmissionModal';
 
 function AssignmentSubmissionsPage() {
   const { id } = useParams();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [filteredSubmissions, setFilteredSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [gradingSubmission, setGradingSubmission] = useState(null);
+  const [requirementId, setRequirementId] = useState(null);
+  const [requirementName, setRequirementName] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, [id]);
+    // 从URL参数中获取requirementId
+    const searchParams = new URLSearchParams(location.search);
+    const reqId = searchParams.get('requirement');
+    setRequirementId(reqId);
+    fetchData(reqId);
+  }, [id, location.search]);
 
-  const fetchData = async () => {
+  const fetchData = async (reqId) => {
     setLoading(true);
     setError(null);
 
@@ -34,6 +42,17 @@ function AssignmentSubmissionsPage() {
           assignmentData.upload_types = JSON.parse(assignmentData.upload_types);
         }
         setAssignment(assignmentData);
+        
+        // 如果指定了requirementId，获取要求名称
+        if (reqId) {
+          const reqRes = await axios.get(`/api/assignments/${id}/upload-requirements`);
+          if (reqRes.data.success) {
+            const requirement = reqRes.data.data.find(req => req.id === parseInt(reqId));
+            if (requirement) {
+              setRequirementName(requirement.name);
+            }
+          }
+        }
       }
 
       // 获取该作业的所有提交
@@ -52,7 +71,42 @@ function AssignmentSubmissionsPage() {
           createdAt: sub.created_at,
           assignmentId: sub.assignment_id
         }));
+        
         setSubmissions(processedSubmissions);
+        
+        // 如果指定了requirementId，过滤只显示该要求的提交
+        if (reqId && processedSubmissions.length > 0) {
+          // 过滤逻辑：获取每个提交的详情，检查是否有文件属于该requirement
+          const filtered = [];
+          for (const sub of processedSubmissions) {
+            try {
+              const detailRes = await axios.get(`/api/submissions/${sub.id}`);
+              if (detailRes.data.success && detailRes.data.data.files) {
+                // 找到匹配requirement的文件
+                const matchedFiles = detailRes.data.data.files.filter(
+                  file => file.requirement_id === parseInt(reqId)
+                );
+                if (matchedFiles.length > 0) {
+                  // 使用匹配的文件信息更新submission对象
+                  const primaryFile = matchedFiles[0];
+                  filtered.push({
+                    ...sub,
+                    filename: primaryFile.filename,
+                    filePath: primaryFile.filepath,
+                    thumbnailPath: primaryFile.thumbnail_path,
+                    // 保存所有匹配的文件信息供后续使用
+                    matchedFiles: matchedFiles
+                  });
+                }
+              }
+            } catch (err) {
+              console.error(`获取提交详情失败: ${sub.id}`, err);
+            }
+          }
+          setFilteredSubmissions(filtered);
+        } else {
+          setFilteredSubmissions(processedSubmissions);
+        }
       }
     } catch (err) {
       console.error('获取数据失败:', err);
@@ -103,6 +157,14 @@ function AssignmentSubmissionsPage() {
       );
       setSubmissions(updatedSubmissions);
       
+      // 同时更新过滤后的列表
+      const updatedFilteredSubmissions = filteredSubmissions.map(sub => 
+        sub.id === gradeData.id 
+          ? { ...sub, score: gradeData.score, grade: gradeData.grade, graded_at: new Date().toISOString() }
+          : sub
+      );
+      setFilteredSubmissions(updatedFilteredSubmissions);
+      
       setShowGradeModal(false);
       setGradingSubmission(null);
     } catch (error) {
@@ -143,6 +205,20 @@ function AssignmentSubmissionsPage() {
 
   return (
     <div>
+      {requirementName && (
+        <div className="alert alert-info mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+            <path d="M12 9h.01" />
+            <path d="M11 12h1v4h1" />
+          </svg>
+          当前仅显示作业要求: <strong>{requirementName}</strong>
+          <Link to={`/assignments/${id}/submissions`} className="btn btn-sm btn-outline-primary ms-3">
+            查看全部
+          </Link>
+        </div>
+      )}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <Link to="/assignments" className="btn btn-outline-secondary me-2">
@@ -212,7 +288,7 @@ function AssignmentSubmissionsPage() {
         </div>
       ) : (
         <div className="row row-cards">
-          {submissions.map((submission) => (
+          {filteredSubmissions.map((submission) => (
             <div key={submission.id} className="col-md-6 col-lg-4">
               <div className="card">
                 {submission.thumbnailPath ? (
@@ -251,7 +327,12 @@ function AssignmentSubmissionsPage() {
                   </Link>
                 )}
                 <div className="card-body">
-                  <h3 className="card-title">{submission.workName}</h3>
+                  <h3 className="card-title">
+                    {requirementId && requirementName 
+                      ? `${assignment?.name} - ${requirementName}`
+                      : (assignment?.name || submission.workName)
+                    }
+                  </h3>
                   <div className="d-flex align-items-center mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>

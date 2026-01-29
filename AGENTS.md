@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-这是一个为小学3D建模课程设计的管理系统，允许学生提交STL/OBJ格式的3D模型文件，教师可以查看、管理和下载这些作品。系统采用前后端分离架构，前端使用React，后端使用Express.js，支持PostgreSQL数据库，具备完整的JWT认证系统和作业管理功能。
+这是一个为小学3D建模课程设计的管理系统，允许学生提交STL/OBJ格式的3D模型文件，教师可以查看、管理、评分和下载这些作品。系统采用前后端分离架构，前端使用React，后端使用Express.js，支持PostgreSQL数据库，具备完整的JWT认证系统和作业管理功能。
 
 ### 核心功能
 - **学生端**：
@@ -10,21 +10,25 @@
   - 自动生成缩略图
   - 根据作业要求提交多个文件
   - 文件扩展名验证
+  - 查看自己提交的作品
 - **教师端**：
   - 查看所有学生作品
   - 下载/删除作品
   - 3D模型预览（Babylon.js）
   - 作业管理（创建、编辑、删除）
   - 上传类型管理
-  - 学生管理
+  - 学生管理（支持年级和班级）
   - 作品批量导出（ZIP）
+  - **作品评分系统（S/A/B/C/O等级）**
+  - **按作业要求进行评分和查看**
 - **认证系统**：
   - JWT令牌认证
   - 密码加密存储
   - 用户管理
   - 修改密码功能
 - **数据库支持**：
-  - 支持PostgreSQL（生产环境） 
+  - 支持PostgreSQL（生产环境推荐）
+  - 完整的连接池管理
 
 ### 技术栈
 - **前端**：React 18, React Router, Bootstrap 5, Babylon.js, Axios, Tabler UI, CKEditor
@@ -40,10 +44,34 @@
 ├── client/                 # React前端
 │   ├── public/            # 静态资源
 │   ├── src/
-│   │   ├── components/    # 组件 (STLThumbnailGenerator, AssignmentDeleteModal, UploadRequirementModal, TablerLayout)
-│   │   ├── pages/         # 页面 (StudentPage, TeacherPage, ViewerPage, AssignmentManagementPage, UploadTypesPage, AccessDeniedPage, AssignmentEditPage, AssignmentNewPage, AssignmentSubmissionsPage, AssignmentViewPage, HomePage, LoginPage, StudentManagementPage, StudentViewPage, TeacherDashboard)
-│   │   ├── contexts/      # React上下文 (AuthContext - JWT认证)
-│   │   ├── utils/         # 工具函数 (UploadAdapter等)
+│   │   ├── components/    # 组件
+│   │   │   ├── AssignmentDeleteModal.js    # 作业删除确认模态框
+│   │   │   ├── GradeSubmissionModal.js     # 作品评分模态框
+│   │   │   ├── STLThumbnailGenerator.js    # STL缩略图生成器
+│   │   │   ├── TablerLayout.js             # Tabler布局组件
+│   │   │   └── UploadRequirementModal.js   # 上传要求管理模态框
+│   │   ├── pages/         # 页面
+│   │   │   ├── AccessDeniedPage.js         # 访问拒绝页面
+│   │   │   ├── AssignmentEditPage.js       # 作业编辑页面
+│   │   │   ├── AssignmentManagementPage.js # 作业管理页面
+│   │   │   ├── AssignmentNewPage.js        # 新建作业页面
+│   │   │   ├── AssignmentSubmissionsPage.js# 作业提交列表页面
+│   │   │   ├── AssignmentViewPage.js       # 作业详情页面
+│   │   │   ├── GradingPage.js              # 作品评分页面（新增）
+│   │   │   ├── HomePage.js                 # 首页
+│   │   │   ├── LoginPage.js                # 登录页面
+│   │   │   ├── StudentManagementPage.js    # 学生管理页面
+│   │   │   ├── StudentPage.js              # 学生提交页面
+│   │   │   ├── StudentViewPage.js          # 学生作品浏览页面
+│   │   │   ├── SubmissionPage.js           # 作品提交页面
+│   │   │   ├── TeacherDashboard.js         # 教师仪表板
+│   │   │   ├── TeacherPage.js              # 作品管理页面
+│   │   │   ├── UploadTypesPage.js          # 上传类型管理页面
+│   │   │   └── ViewerPage.js               # 3D模型查看器页面
+│   │   ├── contexts/      # React上下文
+│   │   │   └── AuthContext.js              # JWT认证上下文
+│   │   ├── utils/         # 工具函数
+│   │   │   └── UploadAdapter.js            # CKEditor上传适配器
 │   │   ├── App.js         # 主应用组件
 │   │   └── index.js       # 入口文件
 │   ├── ckeditor-config.json # CKEditor配置
@@ -54,22 +82,20 @@
 │   ├── thumbnails/        # 缩略图存储
 │   ├── config/            # 配置文件
 │   │   └── database.js    # 数据库配置（PostgreSQL）
-│   ├── middleware/        # 中间件 (auth.js - JWT认证)
+│   ├── middleware/        # 中间件
+│   │   └── auth.js        # JWT认证中间件
 │   ├── routes/            # API路由
 │   │   ├── auth.js        # 认证路由（登录、修改密码、用户管理）
-│   │   ├── submissions.js # 作品管理
+│   │   ├── submissions.js # 作品管理（含评分功能）
 │   │   ├── students.js    # 学生管理
 │   │   ├── assignments.js # 作业管理
 │   │   ├── upload-types.js # 上传类型管理
 │   │   └── upload.js      # 文件上传
 │   ├── scripts/           # 脚本目录
-│   │   ├── migrate-existing-data.js     # 迁移现有数据
-│   │   ├── migrate-missing-data.js      # 迁移缺失数据
-│   │   ├── migrate-requirements.js      # 迁移上传要求
-│   │   ├── migrate-to-postgresql.js     # 迁移到PostgreSQL
+│   │   ├── migrate-students-grade-class.js # 学生年级班级迁移
+│   │   ├── remove-upload-type-columns.js   # 移除旧字段迁移
 │   │   ├── start-dev.js                 # 开发启动脚本
 │   │   └── test-postgresql.js           # PostgreSQL测试脚本
-│   ├── models/            # 数据模型 (database.js)
 │   ├── .env               # 环境变量配置
 │   ├── server.js          # 服务器入口
 │   ├── POSTGRESQL_GUIDE.md # PostgreSQL迁移指南
@@ -86,6 +112,7 @@
 ├── SECURITY_IMPROVEMENTS.md # 安全性改进文档
 ├── README.md              # 项目README
 ├── package.json           # 根package.json
+├── restart-servers.sh     # 服务器重启脚本
 └── start.sh               # 启动脚本
 ```
 
@@ -109,18 +136,27 @@ DB_TYPE=postgresql
 PG_HOST=localhost
 PG_PORT=5432
 PG_DATABASE=stl_manager
-PG_USER=postgres
-PG_PASSWORD=your-password
+PG_USER=stl_user
+PG_PASSWORD=stl_password_2024
+
+# JWT配置
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-2024
+JWT_EXPIRES_IN=7d
+
+# CORS配置
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 2. **PostgreSQL准备工作**：
 ```bash
-# 创建数据库
+# 创建数据库和用户
 sudo -u postgres psql -c "CREATE DATABASE stl_manager;"
+sudo -u postgres psql -c "CREATE USER stl_user WITH PASSWORD 'stl_password_2024';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE stl_manager TO stl_user;"
 
-
+# 运行数据库迁移（如果需要）
 cd server
-npm run migrate:pg
+npm run migrate:students
 ```
 
 ### 启动开发服务器
@@ -138,8 +174,8 @@ cd server && npm start
 
 ### 数据库管理命令
 ```bash
-# 迁移数据到PostgreSQL
-cd server && npm run migrate:pg
+# 迁移学生年级班级字段
+cd server && npm run migrate:students
 
 # 测试PostgreSQL连接
 cd server && npm run test:pg
@@ -152,6 +188,11 @@ tail -f server/server.log
 ```bash
 # 使用启动脚本（包含自动配置）
 ./start.sh
+
+# 重启服务器（清理端口占用后启动）
+npm run restart-servers
+# 或
+./restart-servers.sh
 ```
 
 ### 访问应用
@@ -174,6 +215,9 @@ tail -f server/server.log
 - GET `/api/submissions` - 获取作品列表
 - GET `/api/submissions/:id` - 获取作品详情
 - DELETE `/api/submissions/:id` - 删除作品 (需要认证)
+- PUT `/api/submissions/:id/grade` - 作品评分 (需要认证)
+  - 请求体: `{ score: 85, grade: 'A' }`
+  - grade等级: S/A/B/C/O
 
 ### 学生管理
 - GET `/api/students` - 获取学生列表
@@ -227,9 +271,6 @@ tail -f server/server.log
 | FOREIGN KEY | 外键约束 |
 | ON DELETE CASCADE | 级联删除 |
 
-### 默认数据库配置
-- **PostgreSQL**：通过环境变量配置（生产环境推荐）
-
 ### users表 (用户认证)
 - id: SERIAL PRIMARY KEY
 - username: VARCHAR(50) NOT NULL UNIQUE
@@ -244,10 +285,11 @@ tail -f server/server.log
 - student_year: INTEGER NOT NULL
 - work_name: VARCHAR(200) NOT NULL
 - description: TEXT
-- filename: VARCHAR(255) NOT NULL
-- filepath: VARCHAR(500) NOT NULL
-- thumbnail_path: VARCHAR(500)
 - assignment_id: INTEGER (外键)
+- score: INTEGER - 评分分数
+- grade: VARCHAR(2) - 评分等级 (S/A/B/C/O)
+- grader_id: INTEGER - 评分者ID
+- graded_at: TIMESTAMP - 评分时间
 - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### submission_files表 (多文件支持)
@@ -257,6 +299,9 @@ tail -f server/server.log
 - filename: VARCHAR(255) NOT NULL
 - filepath: VARCHAR(500) NOT NULL
 - thumbnail_path: VARCHAR(500)
+- file_type: VARCHAR(50) DEFAULT 'general'
+- is_primary: BOOLEAN DEFAULT FALSE
+- sort_order: INTEGER DEFAULT 0
 - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - 外键约束: FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
 
@@ -264,6 +309,8 @@ tail -f server/server.log
 - id: SERIAL PRIMARY KEY
 - name: VARCHAR(100) NOT NULL
 - year: INTEGER NOT NULL
+- grade: VARCHAR(10) - 年级 (一/二/三/四/五/六)
+- class_number: INTEGER - 班级
 - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### assignments表 (作业管理)
@@ -307,6 +354,7 @@ tail -f server/server.log
 - **数据库**：
   - 支持PostgreSQL（生产环境推荐）
   - 首次运行自动创建数据库和示例数据
+  - 数据库迁移脚本支持
 - **文件上传**：
   - 支持STL/OBJ/图片/文档/视频等多种格式
   - 文件大小限制：50MB
@@ -339,13 +387,10 @@ tail -f server/server.log
    npm run client  # 前端：http://localhost:3000
    ```
 
-3. **数据库迁移**（可选）：
+3. **数据库管理**：
    ```bash
-   # 迁移到PostgreSQL
-   cd server && npm run migrate:pg
-   
-   # 测试PostgreSQL连接
-   cd server && npm run test:pg
+   # 运行迁移脚本
+   cd server && npm run migrate:students
    ```
 
 ### 生产部署
@@ -411,34 +456,37 @@ tail -f server/server.log
 ## 注意事项
 
 ### 数据库相关
-1. **PostgreSQL支持**：系统支持PostgreSQL数据库，通过环境变量 `DB_TYPE` 配置
+1. **PostgreSQL支持**：系统只支持PostgreSQL数据库，通过环境变量 `DB_TYPE` 配置
 2. **并发性能**：
    - PostgreSQL：适合100+并发用户，生产环境推荐
 3. **连接池管理**：PostgreSQL使用连接池（默认20连接），避免连接泄漏
+4. **数据库迁移**：提供迁移脚本支持schema更新
 
 ### 文件处理
-5. **文件类型支持**：支持STL、OBJ、图片（JPG/PNG/GIF）、文档（PDF/DOC/TXT）、视频（MP4/AVI/MOV）等多种格式
-6. **文件大小限制**：单个文件最大50MB，可通过Multer配置调整
-7. **缩略图生成**：自动为STL/OBJ文件生成预览缩略图，使用Babylon.js渲染
-8. **动态多文件上传**：支持根据作业要求上传多个文件，文件字段动态生成
+1. **文件类型支持**：支持STL、OBJ、图片（JPG/PNG/GIF）、文档（PDF/DOC/TXT）、视频（MP4/AVI/MOV）等多种格式
+2. **文件大小限制**：单个文件最大50MB，可通过Multer配置调整
+3. **缩略图生成**：自动为STL/OBJ文件生成预览缩略图，使用Babylon.js渲染
+4. **动态多文件上传**：支持根据作业要求上传多个文件，文件字段动态生成
+5. **文件路径安全**：使用相对路径，防止路径遍历攻击
 
 ### 安全相关
-9. **认证机制**：JWT令牌认证，令牌7天有效期，密码使用bcrypt加密存储（盐值10）
-10. **路由保护**：所有管理API端点都需要JWT认证，支持角色权限检查
-11. **文件安全**：文件路径包含安全检查，防止路径遍历攻击
-12. **SQL注入防护**：使用参数化查询，防止SQL注入攻击
-13. **CORS配置**：已限制允许的来源，生产环境需配置正确的域名
+1. **认证机制**：JWT令牌认证，令牌7天有效期，密码使用bcrypt加密存储（盐值10）
+2. **路由保护**：所有管理API端点都需要JWT认证，支持角色权限检查
+3. **文件安全**：文件路径包含安全检查，防止路径遍历攻击
+4. **SQL注入防护**：使用参数化查询，防止SQL注入攻击
+5. **CORS配置**：已限制允许的来源，生产环境需配置正确的域名
 
 ### 部署和配置
-14. **环境变量**：敏感信息存储在 `.env` 文件中，生产环境必须修改默认密钥和密码
-15. **默认账户**：系统自动创建默认管理员用户（用户名：`zc1415926`，密码：`zaq12wsx`），**生产环境必须修改**
-16. **端口配置**：前端默认3000端口，后端默认5000端口，可通过环境变量修改
-17. **日志管理**：服务器日志输出到 `server/server.log`，客户端日志输出到 `client/client.log`
+1. **环境变量**：敏感信息存储在 `.env` 文件中，生产环境必须修改默认密钥和密码
+2. **默认账户**：系统自动创建默认管理员用户（用户名：`zc1415926`，密码：`zaq12wsx`），**生产环境必须修改**
+3. **端口配置**：前端默认3000端口，后端默认5000端口，可通过环境变量修改
+4. **日志管理**：服务器日志输出到 `server/server.log`，客户端日志输出到 `client/client.log`
 
 ### 开发和维护
-18. **热重载**：前端使用Create React App热重载，后端使用nodemon热重载
-19. **代码质量**：使用ESLint进行代码检查，保持代码一致性
-20. **文档完整性**：参考 `DEVELOPMENT_EXPERIENCE.md` 获取开发经验，`POSTGRESQL_GUIDE.md` 获取数据库指南
+1. **热重载**：前端使用Create React App热重载，后端使用nodemon热重载
+2. **代码质量**：使用ESLint进行代码检查，保持代码一致性
+3. **文档完整性**：参考 `DEVELOPMENT_EXPERIENCE.md` 获取开发经验，`POSTGRESQL_GUIDE.md` 获取数据库指南
+4. **版本控制**：使用Git进行版本管理，主要分支为master
 
 ## 可扩展性建议
 
@@ -446,24 +494,27 @@ tail -f server/server.log
 1. **PostgreSQL支持**：系统已支持PostgreSQL数据库，适合生产环境部署
 2. **动态多文件上传**：已实现根据作业要求动态上传多个文件
 3. **完整的认证系统**：JWT认证、角色管理、密码加密已实现
+4. **评分系统**：支持S/A/B/C/O等级评分，记录评分者和评分时间
+5. **学生管理**：支持年级和班级管理
+6. **作业要求管理**：支持创建、编辑、排序作业要求
 
 ### 未来扩展建议
-5. **云存储集成**：集成AWS S3、阿里云OSS等云存储服务，减轻服务器存储压力
-6. **CDN加速**：为静态文件和缩略图配置CDN，提升访问速度
-7. **微服务架构**：将缩略图生成、文件处理等拆分为独立微服务
-8. **实时通知**：添加WebSocket支持，实现作品提交、批改等实时通知
-9. **移动端适配**：开发移动端应用或PWA，方便随时查看和管理
-10. **数据分析**：集成数据分析功能，统计作品提交趋势、学生活跃度等
-11. **批量操作**：增强批量导入/导出、批量评分、批量删除等功能
-12. **API文档**：使用Swagger/OpenAPI自动生成API文档
-13. **国际化**：支持多语言界面，适应不同地区用户
-14. **第三方登录**：集成微信、QQ、GitHub等第三方登录方式
-15. **自动化测试**：完善单元测试、集成测试、端到端测试
-16. **容器化部署**：提供Docker和Kubernetes部署方案
-17. **监控告警**：集成Prometheus、Grafana等监控工具
-18. **备份恢复**：实现自动化备份和快速恢复机制
-19. **权限细化**：细化角色权限，支持班级管理员、学科教师等不同角色
-20. **插件系统**：设计插件架构，支持功能模块化扩展
+1. **云存储集成**：集成AWS S3、阿里云OSS等云存储服务，减轻服务器存储压力
+2. **CDN加速**：为静态文件和缩略图配置CDN，提升访问速度
+3. **微服务架构**：将缩略图生成、文件处理等拆分为独立微服务
+4. **实时通知**：添加WebSocket支持，实现作品提交、批改等实时通知
+5. **移动端适配**：开发移动端应用或PWA，方便随时查看和管理
+6. **数据分析**：集成数据分析功能，统计作品提交趋势、学生活跃度等
+7. **批量操作**：增强批量导入/导出、批量评分、批量删除等功能
+8. **API文档**：使用Swagger/OpenAPI自动生成API文档
+9. **国际化**：支持多语言界面，适应不同地区用户
+10. **第三方登录**：集成微信、QQ、GitHub等第三方登录方式
+11. **自动化测试**：完善单元测试、集成测试、端到端测试
+12. **容器化部署**：提供Docker和Kubernetes部署方案
+13. **监控告警**：集成Prometheus、Grafana等监控工具
+14. **备份恢复**：实现自动化备份和快速恢复机制
+15. **权限细化**：细化角色权限，支持班级管理员、学科教师等不同角色
+16. **插件系统**：设计插件架构，支持功能模块化扩展
 
 ## 安全性改进
 

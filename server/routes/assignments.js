@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const { getDatabase } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -366,7 +367,11 @@ router.get('/:id/submissions', async (req, res) => {
           filePath: null,
           thumbnail_path: null,
           created_at: row.created_at,
-          assignment_id: row.assignment_id
+          assignment_id: row.assignment_id,
+          score: row.score,
+          grade: row.grade,
+          grader_id: row.grader_id,
+          graded_at: row.graded_at
         };
       }
       

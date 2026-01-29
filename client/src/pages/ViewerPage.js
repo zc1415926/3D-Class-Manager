@@ -13,6 +13,7 @@ function ViewerPage() {
   const { isAuthenticated } = useAuth();
   const viewerRef = useRef(null);
   const [submission, setSubmission] = useState(null);
+  const [assignmentName, setAssignmentName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -46,7 +47,20 @@ function ViewerPage() {
     try {
       const response = await axios.get(`/api/submissions/${id}`);
       if (response.data.success) {
-        setSubmission(response.data.data);
+        const submissionData = response.data.data;
+        setSubmission(submissionData);
+        
+        // 如果作品信息包含assignment_id，获取作业名称
+        if (submissionData.assignment_id) {
+          try {
+            const assignmentRes = await axios.get(`/api/assignments/${submissionData.assignment_id}`);
+            if (assignmentRes.data.success) {
+              setAssignmentName(assignmentRes.data.data.name);
+            }
+          } catch (err) {
+            console.error('获取作业信息失败:', err);
+          }
+        }
       } else {
         setError('获取作品信息失败');
       }
@@ -229,8 +243,8 @@ function ViewerPage() {
               <table className="table table-borderless">
                 <tbody>
                   <tr>
-                    <td className="fw-bold">作品名称:</td>
-                    <td>{submission.workName}</td>
+                    <td className="fw-bold">作业名称:</td>
+                    <td>{assignmentName || submission.workName}</td>
                   </tr>
                   <tr>
                     <td className="fw-bold">学生姓名:</td>

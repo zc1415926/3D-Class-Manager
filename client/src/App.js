@@ -19,6 +19,7 @@ import AssignmentEditPage from './pages/AssignmentEditPage';
 import AssignmentViewPage from './pages/AssignmentViewPage';
 import AssignmentSubmissionsPage from './pages/AssignmentSubmissionsPage';
 import UploadTypesPage from './pages/UploadTypesPage';
+import GradingPage from './pages/GradingPage';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -41,6 +42,8 @@ function AppContent() {
         <Route path="/assignments/:id/edit" element={<AssignmentEditPage />} />
         <Route path="/assignments/:id/submissions" element={<AssignmentSubmissionsPage />} />
         <Route path="/upload-types" element={<UploadTypesPage />} />
+        <Route path="/grading/:assignmentId/:requirementId" element={<GradingPage />} />
+        <Route path="/grading/:assignmentId" element={<GradingPage />} />
       </Routes>
     </TablerLayout>
   );

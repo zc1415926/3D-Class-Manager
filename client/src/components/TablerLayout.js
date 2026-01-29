@@ -51,6 +51,11 @@ const TablerLayout = ({ children }) => {
             icon: 'list-details'
           },
           {
+            title: '作品评分',
+            path: '/works',
+            icon: 'star'
+          },
+          {
             title: '学生管理',
             path: '/student-management',
             icon: 'users'

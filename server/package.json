@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node scripts/start-dev.js",
-    "migrate:students": "node scripts/migrate-students-grade-class.js"
+    "migrate:students": "node scripts/migrate-students-grade-class.js",
+    "migrate:grade-to-files": "node scripts/migrate-grade-to-files.js"
   },
   "dependencies": {
     "archiver": "^7.0.1",
