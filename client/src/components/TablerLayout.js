@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 const TablerLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isTeacher, logout } = useAuth();
   const location = useLocation();
 
   // 侧边栏菜单项
@@ -40,6 +40,7 @@ const TablerLayout = ({ children }) => {
             path: '/assignments',
             icon: 'clipboard'
           },
+          ...(isTeacher ? [
           {
             title: '作品管理',
             path: '/works',
@@ -60,6 +61,7 @@ const TablerLayout = ({ children }) => {
             path: '/student-management',
             icon: 'users'
           }
+          ] : [])
         ]
       }
     ] : []),

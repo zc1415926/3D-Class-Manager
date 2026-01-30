@@ -17,6 +17,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
 
+  // 根据用户角色判断是否为教师
+  const isTeacher = React.useMemo(() => {
+    return user && (user.role === 'teacher' || user.role === 'admin');
+  }, [user]);
+
   useEffect(() => {
     // 从localStorage检查登录状态
     const storedToken = localStorage.getItem('token');
@@ -121,6 +126,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
+      isTeacher,
       isLoading, 
       user, 
       token,

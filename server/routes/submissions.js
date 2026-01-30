@@ -405,12 +405,17 @@ router.put('/files/:fileId/grade', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: '缺少评分数据' });
   }
 
-  // 验证评分等级是否有效
-  const validGrades = ['S', 'A', 'B', 'C', 'O'];
-  if (!validGrades.includes(grade)) {
-    console.error(`[评分API] 无效的评分等级: ${grade}`);
-    client.release();
-    return res.status(400).json({ success: false, error: '无效的评分等级' });
+  // 如果要取消评分，score和grade必须为null
+  if (score === null && grade === null) {
+    console.log('[评分API] 取消评分请求');
+  } else {
+    // 验证评分等级是否有效
+    const validGrades = ['S', 'A', 'B', 'C', 'O'];
+    if (!validGrades.includes(grade)) {
+      console.error(`[评分API] 无效的评分等级: ${grade}`);
+      client.release();
+      return res.status(400).json({ success: false, error: '无效的评分等级' });
+    }
   }
 
   try {
@@ -431,10 +436,10 @@ router.put('/files/:fileId/grade', authenticateToken, async (req, res) => {
     // 更新评分
     const updateResult = await client.query(`
       UPDATE submission_files
-      SET score = $1, grade = $2, grader_id = $3, graded_at = CURRENT_TIMESTAMP
-      WHERE id = $4
+      SET score = $1, grade = $2, grader_id = $3, graded_at = $4
+      WHERE id = $5
       RETURNING *
-    `, [score, grade, userId, fileId]);
+    `, [score, grade, userId, score === null && grade === null ? null : new Date(), fileId]);
 
     console.log(`[评分API] 更新后数据:`, updateResult.rows[0]);
     console.log(`[评分API] 更新行数:`, updateResult.rowCount);

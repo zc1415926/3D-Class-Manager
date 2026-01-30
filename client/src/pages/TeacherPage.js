@@ -5,18 +5,21 @@ import { useAuth } from '../contexts/AuthContext';
 
 function TeacherPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isTeacher, isLoading } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/access-denied', { replace: true });
-      return;
+    // 等待认证信息加载完成后再做判断
+    if (!isLoading) {
+      if (!isAuthenticated || !isTeacher) {
+        navigate('/access-denied', { replace: true });
+        return;
+      }
+      fetchAssignments();
     }
-    fetchAssignments();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isTeacher, isLoading, navigate]);
 
   const fetchAssignments = async () => {
     setLoading(true);
@@ -60,12 +63,14 @@ function TeacherPage() {
                         try {
                           const detailRes = await axios.get(`/api/submissions/${sub.id}`);
                           if (detailRes.data.success && detailRes.data.data.files) {
-                            const hasFileForRequirement = detailRes.data.data.files.some(
+                            const filesForRequirement = detailRes.data.data.files.filter(
                               file => file.requirement_id === req.id
                             );
-                            if (hasFileForRequirement) {
+                            if (filesForRequirement.length > 0) {
                               reqSubmissionCount++;
-                              if (sub.grade) {
+                              // 检查该要求的所有文件是否都已评分
+                              const allGraded = filesForRequirement.every(file => file.grade);
+                              if (allGraded) {
                                 reqGradedCount++;
                               }
                             }
@@ -265,7 +270,6 @@ function TeacherPage() {
                                       <path d="M7 7h10" />
                                     </svg>
                                     {req.submissionCount === 0 ? '暂无作品' : 
-                                     req.gradedCount === req.submissionCount ? '重新打分' : 
                                      `开始打分 (${req.gradedCount || 0}/${req.submissionCount})`}
                                   </button>
                                 </div>

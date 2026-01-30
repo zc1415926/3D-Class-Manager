@@ -21,21 +21,26 @@
   - 作品批量导出（ZIP）
   - **作品评分系统（S/A/B/C/O等级）**
   - **按作业要求进行评分和查看**
+  - **文件级评分管理（支持每个提交文件独立评分）**
 - **认证系统**：
   - JWT令牌认证
   - 密码加密存储
-  - 用户管理
+  - 用户管理（支持教师和管理员角色）
   - 修改密码功能
+  - 基于角色的访问控制（RBAC）
 - **数据库支持**：
   - 支持PostgreSQL（生产环境推荐）
   - 完整的连接池管理
+  - 学生年级和班级管理支持
+  - 文件级评分数据存储
 
 ### 技术栈
-- **前端**：React 18, React Router, Bootstrap 5, Babylon.js, Axios, Tabler UI, CKEditor
-- **后端**：Express.js, PostgreSQL, Multer, Babylon.js (缩略图生成)
-- **安全认证**：JWT (jsonwebtoken), bcryptjs, dotenv
-- **文件处理**：STL/OBJ文件上传、缩略图自动生成、ZIP打包导出、多文件动态上传
+- **前端**：React 18, React Router, Bootstrap 5, Babylon.js, Axios, Tabler UI, CKEditor, React Hooks
+- **后端**：Express.js, PostgreSQL, Multer, Babylon.js (缩略图生成), bcryptjs
+- **安全认证**：JWT (jsonwebtoken), bcryptjs, dotenv, 基于角色的访问控制 (RBAC)
+- **文件处理**：STL/OBJ文件上传、缩略图自动生成、ZIP打包导出、多文件动态上传、文件级评分管理
 - **数据库**：PostgreSQL (pg), 连接池管理
+- **开发工具**：Node.js, npm, nodemon, ESLint
 
 ## 项目结构
 
@@ -286,13 +291,13 @@ npm run restart-servers
 - work_name: VARCHAR(200) NOT NULL
 - description: TEXT
 - assignment_id: INTEGER (外键)
-- score: INTEGER - 评分分数
-- grade: VARCHAR(2) - 评分等级 (S/A/B/C/O)
-- grader_id: INTEGER - 评分者ID
-- graded_at: TIMESTAMP - 评分时间
+- score: INTEGER - 总评分分数（已重构，主要评分现在在文件级别）
+- grade: VARCHAR(2) - 总评分等级 (S/A/B/C/O)（已重构，主要评分现在在文件级别）
+- grader_id: INTEGER - 评分者ID（已重构，主要评分现在在文件级别）
+- graded_at: TIMESTAMP - 评分时间（已重构，主要评分现在在文件级别）
 - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-### submission_files表 (多文件支持)
+### submission_files表 (多文件支持和文件级评分)
 - id: SERIAL PRIMARY KEY
 - submission_id: INTEGER NOT NULL (外键)
 - requirement_id: INTEGER (外键)
@@ -302,6 +307,10 @@ npm run restart-servers
 - file_type: VARCHAR(50) DEFAULT 'general'
 - is_primary: BOOLEAN DEFAULT FALSE
 - sort_order: INTEGER DEFAULT 0
+- score: INTEGER - 文件级评分分数
+- grade: VARCHAR(2) - 文件级评分等级 (S/A/B/C/O)
+- grader_id: INTEGER - 文件级评分者ID
+- graded_at: TIMESTAMP - 文件级评分时间
 - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - 外键约束: FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
 
@@ -497,6 +506,9 @@ npm run restart-servers
 4. **评分系统**：支持S/A/B/C/O等级评分，记录评分者和评分时间
 5. **学生管理**：支持年级和班级管理
 6. **作业要求管理**：支持创建、编辑、排序作业要求
+7. **文件级评分系统**：已实现对每个提交文件的独立评分功能
+8. **基于角色的访问控制**：已实现前端和后端的RBAC权限控制机制
+9. **动态UI权限控制**：已实现根据用户角色动态控制页面访问和菜单显示
 
 ### 未来扩展建议
 1. **云存储集成**：集成AWS S3、阿里云OSS等云存储服务，减轻服务器存储压力
@@ -515,6 +527,8 @@ npm run restart-servers
 14. **备份恢复**：实现自动化备份和快速恢复机制
 15. **权限细化**：细化角色权限，支持班级管理员、学科教师等不同角色
 16. **插件系统**：设计插件架构，支持功能模块化扩展
+17. **AI辅助评分**：集成AI模型对3D模型质量进行自动预评分
+18. **版本控制**：为学生作品添加版本管理功能
 
 ## 安全性改进
 
@@ -535,6 +549,12 @@ npm run restart-servers
 - 支持创建、查看、删除用户
 - 支持修改密码功能
 - 支持角色管理（teacher/admin）
+
+### 基于角色的访问控制（RBAC）
+- **前端权限控制**：基于用户角色（teacher/admin）控制页面访问和导航菜单显示
+- **细粒度权限**：不同角色具有不同的功能访问权限
+- **动态UI控制**：根据用户角色动态显示或隐藏UI元素
+- **页面访问控制**：实现等待认证状态加载完成后再进行权限检查的机制
 
 ### 安全最佳实践
 - 密码使用bcrypt加密，盐值设为10

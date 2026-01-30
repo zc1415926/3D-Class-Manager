@@ -307,14 +307,6 @@ function GradingPage() {
             作业: {assignmentName} {requirementName && `| 要求: ${requirementName}`} | 进度: {getProgressText()}
           </div>
         </div>
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-secondary"
-            onClick={() => requirementId ? navigate(`/assignments/${assignmentId}`) : navigate('/assignments')}
-          >
-            {requirementId ? '返回作业详情' : '返回作业列表'}
-          </button>
-        </div>
       </div>
 
       <div className="row">
@@ -390,7 +382,7 @@ function GradingPage() {
                     ) : (
                       <span className="text-muted">未评分</span>
                     )}
-                    {currentSubmission.score !== undefined && ` (${currentSubmission.score}分)`}
+                    {currentSubmission.score !== undefined && currentSubmission.score !== null && ` (${currentSubmission.score}分)`}
                   </div>
                 </div>
               </div>
@@ -425,6 +417,53 @@ function GradingPage() {
               </div>
             </div>
           </div>
+
+          {/* 取消打分按钮 */}
+          {currentSubmission.grade && (
+            <div className="card mt-3">
+              <div className="card-body text-center">
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={async () => {
+                    if (!window.confirm('确定要取消打分吗？这将把评分恢复为未打分状态。')) {
+                      return;
+                    }
+                    
+                    try {
+                      const fileId = currentSubmission.file_id;
+                      await axios.put(`/api/submissions/files/${fileId}/grade`, {
+                        score: null,
+                        grade: null
+                      });
+                      
+                      // 更新本地数据
+                      const updatedSubmissions = [...submissions];
+                      updatedSubmissions[currentIndex] = {
+                        ...updatedSubmissions[currentIndex],
+                        score: null,
+                        grade: null,
+                        grader_id: null,
+                        graded_at: null
+                      };
+                      
+                      setSubmissions(updatedSubmissions);
+                      setCurrentSubmission(updatedSubmissions[currentIndex]);
+                    } catch (error) {
+                      console.error('取消打分失败:', error);
+                      alert('取消打分失败，请重试');
+                    }
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 12m-9 0a9 9 0 1 1 18 0a9 9 0 0 1 -18 0" />
+                    <path d="M9 12l2 2l4 -4" />
+                  </svg>
+                  取消打分
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
