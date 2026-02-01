@@ -45,7 +45,7 @@ function ViewerPage() {
     setError(null);
 
     try {
-      const response = await axios.get(`/api/submissions/${id}`);
+      const response = await axios.get(`/api/v1/submissions/${id}`);
       if (response.data.success) {
         const submissionData = response.data.data;
         setSubmission(submissionData);
@@ -53,7 +53,7 @@ function ViewerPage() {
         // 如果作品信息包含assignment_id，获取作业名称
         if (submissionData.assignment_id) {
           try {
-            const assignmentRes = await axios.get(`/api/assignments/${submissionData.assignment_id}`);
+            const assignmentRes = await axios.get(`/api/v1/assignments/${submissionData.assignment_id}`);
             if (assignmentRes.data.success) {
               setAssignmentName(assignmentRes.data.data.name);
             }

@@ -28,7 +28,7 @@ class UploadAdapter {
       data.append('assignmentId', assignmentId);
       data.append('studentYear', new Date().getFullYear());
 
-      axios.post('/api/upload-image', data, {
+      axios.post('/api/v1/upload/upload-image', data, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },

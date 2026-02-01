@@ -80,13 +80,13 @@ function GradingPage() {
     
     try {
       // 获取作业信息
-      const assignmentRes = await axios.get(`/api/assignments/${aid}`);
+      const assignmentRes = await axios.get(`/api/v1/assignments/${aid}`);
       if (assignmentRes.data.success) {
         setAssignmentName(assignmentRes.data.data.name);
       }
 
       // 获取所有提交基本信息
-      const submissionsRes = await axios.get(`/api/assignments/${aid}/submissions`);
+      const submissionsRes = await axios.get(`/api/v1/assignments/${aid}/submissions`);
       if (submissionsRes.data.success) {
         let submissions = submissionsRes.data.data;
         
@@ -94,7 +94,7 @@ function GradingPage() {
         if (rid) {
           // 获取要求名称
           try {
-            const reqRes = await axios.get(`/api/assignments/${aid}/upload-requirements`);
+            const reqRes = await axios.get(`/api/v1/assignments/${aid}/upload-requirements`);
             if (reqRes.data.success) {
               const requirement = reqRes.data.data.find(req => req.id === parseInt(rid));
               if (requirement) {
@@ -109,7 +109,7 @@ function GradingPage() {
           const fileLevelData = [];
           for (const sub of submissions) {
             try {
-              const detailRes = await axios.get(`/api/submissions/${sub.id}`);
+              const detailRes = await axios.get(`/api/v1/submissions/${sub.id}`);
               if (detailRes.data.success && detailRes.data.data.files) {
                 // 找到所有匹配该 requirement 的文件
                 const matchedFiles = detailRes.data.data.files.filter(
@@ -220,7 +220,7 @@ function GradingPage() {
 
     try {
       const fileId = currentSubmission.file_id;
-      const response = await axios.put(`/api/submissions/files/${fileId}/grade`, {
+      const response = await axios.put(`/api/v1/submissions/files/${fileId}/grade`, {
         score: parseInt(selectedScore),
         grade: selectedGrade
       });
@@ -431,7 +431,7 @@ function GradingPage() {
                     
                     try {
                       const fileId = currentSubmission.file_id;
-                      await axios.put(`/api/submissions/files/${fileId}/grade`, {
+                      await axios.put(`/api/v1/submissions/files/${fileId}/grade`, {
                         score: null,
                         grade: null
                       });

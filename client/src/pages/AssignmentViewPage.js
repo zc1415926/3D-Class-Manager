@@ -17,7 +17,7 @@ function AssignmentViewPage() {
     setError(null);
 
     try {
-      const response = await axios.get(`/api/assignments/${id}`);
+      const response = await axios.get(`/api/v1/assignments/${id}`);
       if (response.data.success) {
         setAssignment(response.data.data);
       } else {

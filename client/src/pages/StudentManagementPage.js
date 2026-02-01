@@ -33,7 +33,7 @@ function StudentManagementPage() {
     setError(null);
     
     try {
-      const response = await axios.get('/api/students');
+      const response = await axios.get('/api/v1/students');
       if (response.data.success) {
         setStudents(response.data.data);
       } else {
@@ -51,10 +51,15 @@ function StudentManagementPage() {
     e.preventDefault();
     
     try {
-      const response = await axios.post('/api/students', formData);
+      const response = await axios.post('/api/v1/students', formData);
       if (response.data.success) {
         setShowAddModal(false);
-        setFormData({ name: '', year: '' });
+        setFormData({ 
+          name: '', 
+          year: currentYear.toString(),
+          grade: '',
+          class_number: '1'
+        });
         fetchStudents();
       } else {
         alert('添加失败: ' + (response.data.error || '未知错误'));
@@ -71,11 +76,16 @@ function StudentManagementPage() {
     if (!editingStudent) return;
     
     try {
-      const response = await axios.put(`/api/students/${editingStudent.id}`, formData);
+      const response = await axios.put(`/api/v1/students/${editingStudent.id}`, formData);
       if (response.data.success) {
         setShowEditModal(false);
         setEditingStudent(null);
-        setFormData({ name: '', year: '' });
+        setFormData({ 
+          name: '', 
+          year: currentYear.toString(),
+          grade: '',
+          class_number: '1'
+        });
         fetchStudents();
       } else {
         alert('更新失败: ' + (response.data.error || '未知错误'));
@@ -103,7 +113,7 @@ function StudentManagementPage() {
     }
 
     try {
-      await axios.delete(`/api/students/${id}`);
+      await axios.delete(`/api/v1/students/${id}`);
       setStudents(students.filter(student => student.id !== id));
     } catch (err) {
       console.error('删除失败:', err);
@@ -123,6 +133,7 @@ function StudentManagementPage() {
     });
   };
 
+  // ... 其余代码保持不变
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -148,14 +159,11 @@ function StudentManagementPage() {
                   <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
                   <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
                 </svg>
-                刷新
+                刷新列表
               </>
             )}
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowAddModal(true)}
-          >
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
             <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
               <path d="M12 5l0 14" />
@@ -186,66 +194,47 @@ function StudentManagementPage() {
             <div className="empty-img">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="64" height="64" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
               </svg>
             </div>
             <p className="empty-title">暂无学生</p>
-            <p className="empty-subtitle text-muted">点击"添加学生"按钮开始添加...</p>
+            <p className="empty-subtitle text-muted">还没有添加任何学生</p>
           </div>
         </div>
       ) : (
         <div className="card">
-          <div className="card-body p-0">
+          <div className="card-body">
             <div className="table-responsive">
               <table className="table table-vcenter card-table">
                 <thead>
                   <tr>
-                    <th className="w-1">ID</th>
                     <th>姓名</th>
                     <th>年级</th>
                     <th>班级</th>
                     <th>年份</th>
-                    <th>创建时间</th>
                     <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
                   {students.map((student) => (
                     <tr key={student.id}>
-                      <td><span className="text-muted">{student.id}</span></td>
                       <td>
                         <div className="d-flex py-1 align-items-center">
-                          <span className="avatar me-2 bg-primary">S</span>
-                          <div className="flex-fill">
-                            <div className="font-weight-medium">{student.name}</div>
+                          <div>
+                            <div className="fw-bold">{student.name}</div>
                           </div>
                         </div>
                       </td>
-                      <td>
-                        {student.grade || '一'}年级
-                      </td>
-                      <td>
-                        {student.class_number || 1}班
-                      </td>
-                      <td>
-                        {student.year}
-                      </td>
-                      <td className="text-muted">
-                        {new Date(student.createdAt).toLocaleString('zh-CN')}
-                      </td>
+                      <td>{student.grade}</td>
+                      <td>{student.class_number}班</td>
+                      <td>{student.year}</td>
                       <td>
                         <div className="btn-list flex-nowrap">
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => handleEdit(student)}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                              <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
-                              <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
-                              <path d="M16 5l3 3" />
-                            </svg>
                             编辑
                           </button>
                           <button

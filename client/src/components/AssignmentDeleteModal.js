@@ -23,8 +23,8 @@ function AssignmentDeleteModal({ show, assignment, onClose, onDelete, onExport }
     setIsDeleting(true);
     try {
       const endpoint = assignment.submission_count > 0 
-        ? `/api/assignments/${assignment.id}/cascade` 
-        : `/api/assignments/${assignment.id}`;
+        ? `/api/v1/assignments/${assignment.id}/cascade` 
+        : `/api/v1/assignments/${assignment.id}`;
       
       await axios.delete(endpoint);
       onDelete();
@@ -41,7 +41,7 @@ function AssignmentDeleteModal({ show, assignment, onClose, onDelete, onExport }
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await axios.get(`/api/assignments/${assignment.id}/export`, {
+      const response = await axios.get(`/api/v1/assignments/${assignment.id}/export`, {
         responseType: 'blob'
       });
 

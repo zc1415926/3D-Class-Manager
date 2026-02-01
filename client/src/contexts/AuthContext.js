@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
         
         // 设置axios默认请求头
         axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        axios.defaults.headers.common['Accept'] = 'application/json';
       } catch (error) {
         console.error('解析用户信息失败:', error);
         localStorage.removeItem('token');
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post('/api/v1/auth/login', {
         username,
         password
       });
@@ -65,6 +66,7 @@ export const AuthProvider = ({ children }) => {
         
         // 设置axios默认请求头
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        axios.defaults.headers.common['Accept'] = 'application/json';
         
         return { success: true };
       }
@@ -89,11 +91,12 @@ export const AuthProvider = ({ children }) => {
     
     // 清除axios默认请求头
     delete axios.defaults.headers.common['Authorization'];
+    delete axios.defaults.headers.common['Accept'];
   };
 
   const changePassword = async (currentPassword, newPassword) => {
     try {
-      const response = await axios.post('/api/auth/change-password', {
+      const response = await axios.post('/api/v1/auth/change-password', {
         currentPassword,
         newPassword
       });
@@ -108,7 +111,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      const response = await axios.get('/api/auth/me');
+      const response = await axios.get('/api/v1/auth/me');
       
       if (response.data.success) {
         setUser(response.data.data);

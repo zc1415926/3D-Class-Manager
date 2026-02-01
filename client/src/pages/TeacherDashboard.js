@@ -25,8 +25,8 @@ function TeacherDashboard() {
     setLoading(true);
     try {
       const [submissionsRes, studentsRes] = await Promise.all([
-        axios.get('/api/submissions'),
-        axios.get('/api/students')
+        axios.get('/api/v1/submissions'),
+        axios.get('/api/v1/students')
       ]);
 
       if (submissionsRes.data.success && studentsRes.data.success) {

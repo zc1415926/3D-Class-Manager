@@ -39,9 +39,9 @@ function HomePage() {
   const fetchData = async () => {
     try {
       const [assignmentsRes, submissionsRes, studentsRes] = await Promise.all([
-        axios.get('/api/assignments'),
-        isAuthenticated ? axios.get('/api/submissions') : Promise.resolve({ data: { data: [] } }),
-        axios.get('/api/students')
+        axios.get('/api/v1/assignments'),
+        isAuthenticated ? axios.get('/api/v1/submissions') : Promise.resolve({ data: { data: [] } }),
+        axios.get('/api/v1/students')
       ]);
 
       if (assignmentsRes.data.success) {

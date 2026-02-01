@@ -18,7 +18,7 @@ function AssignmentManagementPage() {
     setError(null);
 
     try {
-      const response = await axios.get('/api/assignments');
+      const response = await axios.get('/api/v1/assignments');
       if (response.data.success) {
         setAssignments(response.data.data);
       } else {
@@ -43,7 +43,7 @@ function AssignmentManagementPage() {
   const handleDelete = async (id, name) => {
     // 先检查作业是否有作品
     try {
-      const response = await axios.get(`/api/assignments/${id}`);
+      const response = await axios.get(`/api/v1/assignments/${id}`);
       if (response.data.success) {
         const assignment = response.data.data;
         // 始终显示模态框
@@ -99,7 +99,7 @@ function AssignmentManagementPage() {
         sort_order: index
       }));
 
-      await axios.put('/api/assignments/reorder', {
+      await axios.put('/api/v1/assignments/reorder', {
         assignments: assignmentsWithNewOrder
       });
     } catch (err) {

@@ -59,7 +59,7 @@ function AssignmentNewPage() {
     }
 
     try {
-      const response = await axios.delete(`/api/assignments/${tempAssignmentId}/upload-requirements/${requirementId}`);
+      const response = await axios.delete(`/api/v1/assignments/${tempAssignmentId}/upload-requirements/${requirementId}`);
       if (response.data.success) {
         setUploadRequirements(prev => prev.filter(r => r.id !== requirementId));
         setSuccess('作业要求已删除');
@@ -135,7 +135,7 @@ function AssignmentNewPage() {
         upload_types: uploadRequirements.map(r => r.upload_type)
       };
 
-      const response = await axios.post('/api/assignments', payload);
+      const response = await axios.post('/api/v1/assignments', payload);
 
       if (response.data.success) {
         const assignmentId = response.data.data.id;
@@ -144,7 +144,7 @@ function AssignmentNewPage() {
         // 批量创建上传要求
         if (uploadRequirements.length > 0) {
           for (const req of uploadRequirements) {
-            await axios.post(`/api/assignments/${assignmentId}/upload-requirements`, {
+            await axios.post(`/api/v1/assignments/${assignmentId}/upload-requirements`, {
               name: req.name,
               upload_type: req.upload_type,
               is_required: req.is_required,
@@ -159,7 +159,7 @@ function AssignmentNewPage() {
         // 如果有上传的文件，移动它们到新的目录
         if (uploadedFiles.length > 0) {
           try {
-            await axios.post(`/api/assignments/${assignmentId}/move-uploaded-files`, {
+            await axios.post(`/api/v1/assignments/${assignmentId}/move-uploaded-files`, {
               files: uploadedFiles,
               year: formData.year
             });

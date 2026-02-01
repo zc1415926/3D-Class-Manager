@@ -31,8 +31,8 @@ function StudentViewPage() {
     try {
       // 并行获取学生和作品数据
       const [studentsRes, submissionsRes] = await Promise.all([
-        axios.get('/api/students'),
-        axios.get('/api/submissions')
+        axios.get('/api/v1/students'),
+        axios.get('/api/v1/submissions')
       ]);
 
       if (studentsRes.data.success) {

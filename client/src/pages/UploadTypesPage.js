@@ -32,7 +32,7 @@ function UploadTypesPage() {
     setError(null);
 
     try {
-      const response = await axios.get('/api/upload-types');
+      const response = await axios.get('/api/v1/upload-types');
       if (response.data.success) {
         setUploadTypes(response.data.data);
       } else {
@@ -82,13 +82,13 @@ function UploadTypesPage() {
 
     try {
       if (editingType) {
-        await axios.put(`/api/upload-types/${editingType.id}`, {
+        await axios.put(`/api/v1/upload-types/${editingType.id}`, {
           ...formData,
           extensions: extensionsArray,
           max_file_size: formData.max_file_size * 1024 * 1024 // 转换为字节
         });
       } else {
-        await axios.post('/api/upload-types', {
+        await axios.post('/api/v1/upload-types', {
           ...formData,
           extensions: extensionsArray,
           max_file_size: formData.max_file_size * 1024 * 1024 // 转换为字节
@@ -120,7 +120,7 @@ function UploadTypesPage() {
     }
 
     try {
-      await axios.delete(`/api/upload-types/${id}`);
+      await axios.delete(`/api/v1/upload-types/${id}`);
       fetchUploadTypes();
     } catch (err) {
       console.error('删除作业类型失败:', err);

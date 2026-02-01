@@ -5,9 +5,15 @@ tabler-icons/
 
 # Production builds
 client/build/
-server/uploads/
-server/thumbnails/
-server/database/*.db
+backend_laravel/storage/app/public/*
+backend_laravel/storage/app/temp/*
+backend_laravel/storage/framework/cache/*
+backend_laravel/storage/framework/views/*
+backend_laravel/storage/logs/*
+backend_laravel/.phpunit.result.cache
+backend_laravel/.phpunit.cache/
+backend_laravel/node_modules/
+backend_laravel/vendor/
 
 # Environment variables
 .env
@@ -15,12 +21,13 @@ server/database/*.db
 .env.development.local
 .env.test.local
 .env.production.local
+backend_laravel/.env
+backend_laravel/.env.backup
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-server/logs/
 
 # OS files
 .DS_Store

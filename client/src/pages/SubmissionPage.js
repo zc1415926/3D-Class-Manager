@@ -33,7 +33,7 @@ function SubmissionPage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('/api/students');
+      const response = await axios.get('/api/v1/students');
       if (response.data.success) {
         setStudents(response.data.data);
       }
@@ -44,7 +44,7 @@ function SubmissionPage() {
 
   const fetchAssignments = async () => {
     try {
-      const response = await axios.get('/api/assignments');
+      const response = await axios.get('/api/v1/assignments');
       if (response.data.success) {
         setAssignments(response.data.data);
       }
@@ -55,7 +55,7 @@ function SubmissionPage() {
 
   const fetchUploadTypes = async () => {
     try {
-      const response = await axios.get('/api/upload-types');
+      const response = await axios.get('/api/v1/upload-types');
       if (response.data.success) {
         setUploadTypes(response.data.data);
       }
@@ -66,7 +66,7 @@ function SubmissionPage() {
 
   const fetchUploadRequirements = async (assignmentId) => {
     try {
-      const response = await axios.get(`/api/assignments/${assignmentId}/upload-requirements`);
+      const response = await axios.get(`/api/v1/assignments/${assignmentId}/upload-requirements`);
       if (response.data.success) {
         setUploadRequirements(response.data.data);
       }
@@ -363,7 +363,7 @@ function SubmissionPage() {
     }
 
     try {
-      const response = await axios.post('/api/submissions', formDataToSend, {
+      const response = await axios.post('/api/v1/submissions', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },

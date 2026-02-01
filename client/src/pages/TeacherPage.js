@@ -27,7 +27,7 @@ function TeacherPage() {
     
     try {
       // 获取所有作业
-      const assignmentsRes = await axios.get('/api/assignments');
+      const assignmentsRes = await axios.get('/api/v1/assignments');
       if (assignmentsRes.data.success) {
         const assignmentsData = assignmentsRes.data.data;
         
@@ -36,7 +36,7 @@ function TeacherPage() {
           assignmentsData.map(async (assignment) => {
             try {
               // 获取提交数量
-              const submissionsRes = await axios.get(`/api/assignments/${assignment.id}/submissions`);
+              const submissionsRes = await axios.get(`/api/v1/assignments/${assignment.id}/submissions`);
               let submissionCount = 0;
               let gradedCount = 0;
               const submissions = submissionsRes.data.success ? submissionsRes.data.data : [];
@@ -47,7 +47,7 @@ function TeacherPage() {
               }
               
               // 获取作业要求
-              const requirementsRes = await axios.get(`/api/assignments/${assignment.id}/upload-requirements`);
+              const requirementsRes = await axios.get(`/api/v1/assignments/${assignment.id}/upload-requirements`);
               let requirements = [];
               
               if (requirementsRes.data.success && requirementsRes.data.data.length > 0) {
@@ -61,7 +61,7 @@ function TeacherPage() {
                       // 遍历所有提交，检查是否有文件属于该要求
                       for (const sub of submissions) {
                         try {
-                          const detailRes = await axios.get(`/api/submissions/${sub.id}`);
+                          const detailRes = await axios.get(`/api/v1/submissions/${sub.id}`);
                           if (detailRes.data.success && detailRes.data.data.files) {
                             const filesForRequirement = detailRes.data.data.files.filter(
                               file => file.requirement_id === req.id
@@ -236,12 +236,12 @@ function TeacherPage() {
                     {assignment.requirements && assignment.requirements.length > 0 && (
                       <div className="mt-3">
                         <div className="text-muted mb-2">作业要求:</div>
-                        <div className="list list-group list-group-flush">
+                        <div className="list-group list-group-flush">
                           {assignment.requirements.map((req, index) => (
                             <div key={req.id || index} className="list-group-item p-3 border-0 bg-light mb-2 rounded">
                               <div className="d-flex justify-content-between align-items-center">
                                 <div className="flex-grow-1">
-                                  <div className="font-weight-medium">{req.name}</div>
+                                  <div className="fw-bold">{req.name}</div>
                                   <small className="text-muted">类型: {req.upload_type}</small>
                                   {req.is_required && <span className="badge bg-danger ms-2">必填</span>}
                                 </div>

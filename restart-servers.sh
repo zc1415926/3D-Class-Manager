@@ -11,9 +11,9 @@ echo ""
 echo "🧹 清理已占用的端口..."
 
 # 终止占用5000端口的进程（后端服务器）
-if lsof -i :5000 > /dev/null 2>&1; then
-    echo "  停止占用5000端口的进程..."
-    lsof -ti:5000 | xargs kill -9 2>/dev/null
+if lsof -i :8000 > /dev/null 2>&1; then
+    echo "  停止占用8000端口的进程..."
+    lsof -ti:8000 | xargs kill -9 2>/dev/null
 fi
 
 # 终止占用3000端口的进程（前端服务器）
@@ -30,7 +30,7 @@ echo ""
 
 # 启动整个系统
 echo "🚀 启动3D班级管理系统..."
-echo "   包括：前端服务器（端口3000）、后端服务器（端口5000）"
+echo "   包括：前端服务器（端口3000）、后端服务器（端口8000）"
 
 # 使用 concurrently 同时启动前端和后端
-npx concurrently "cd server && npm run dev" "cd client && npm start"
+npx concurrently "cd backend_laravel && ./quick-start.sh" "cd client && npm start"

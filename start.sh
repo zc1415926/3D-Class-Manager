@@ -17,4 +17,4 @@ fi
 
 # 启动服务器
 echo "🌐 启动服务器..."
-cd server && npm run dev
+cd backend_laravel && ./quick-start.sh

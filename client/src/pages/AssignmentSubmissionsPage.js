@@ -34,7 +34,7 @@ function AssignmentSubmissionsPage() {
 
     try {
       // 获取作业信息
-      const assignmentRes = await axios.get(`/api/assignments/${id}`);
+      const assignmentRes = await axios.get(`/api/v1/assignments/${id}`);
       if (assignmentRes.data.success) {
         // 处理作业信息，确保upload_types是数组
         const assignmentData = assignmentRes.data.data;
@@ -45,7 +45,7 @@ function AssignmentSubmissionsPage() {
         
         // 如果指定了requirementId，获取要求名称
         if (reqId) {
-          const reqRes = await axios.get(`/api/assignments/${id}/upload-requirements`);
+          const reqRes = await axios.get(`/api/v1/assignments/${id}/upload-requirements`);
           if (reqRes.data.success) {
             const requirement = reqRes.data.data.find(req => req.id === parseInt(reqId));
             if (requirement) {
@@ -56,7 +56,7 @@ function AssignmentSubmissionsPage() {
       }
 
       // 获取该作业的所有提交
-      const submissionsRes = await axios.get(`/api/assignments/${id}/submissions`);
+      const submissionsRes = await axios.get(`/api/v1/assignments/${id}/submissions`);
       if (submissionsRes.data.success) {
         // 处理数据，转换字段名
         const processedSubmissions = submissionsRes.data.data.map(sub => ({
@@ -80,7 +80,7 @@ function AssignmentSubmissionsPage() {
           const filtered = [];
           for (const sub of processedSubmissions) {
             try {
-              const detailRes = await axios.get(`/api/submissions/${sub.id}`);
+              const detailRes = await axios.get(`/api/v1/submissions/${sub.id}`);
               if (detailRes.data.success && detailRes.data.data.files) {
                 // 找到匹配requirement的文件
                 const matchedFiles = detailRes.data.data.files.filter(
@@ -122,7 +122,7 @@ function AssignmentSubmissionsPage() {
     }
 
     try {
-      const response = await axios.delete(`/api/submissions/${submissionId}`);
+      const response = await axios.delete(`/api/v1/submissions/${submissionId}`);
       if (response.data.success) {
         // 重新获取数据
         fetchData();
@@ -144,7 +144,7 @@ function AssignmentSubmissionsPage() {
   // 保存评分
   const handleSaveGrade = async (gradeData) => {
     try {
-      await axios.put(`/api/submissions/${gradeData.id}/grade`, {
+      await axios.put(`/api/v1/submissions/${gradeData.id}/grade`, {
         score: gradeData.score,
         grade: gradeData.grade
       });

@@ -39,7 +39,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
   const fetchUploadTypes = async () => {
     setFetchingTypes(true);
     try {
-      const response = await axios.get('/api/upload-types');
+      const response = await axios.get('/api/v1/upload-types');
       if (response.data.success) {
         setUploadTypes(response.data.data);
       }
@@ -79,7 +79,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
 
       if (requirement) {
         // 更新现有作业要求
-        const response = await axios.put(`/api/assignments/${assignmentId}/upload-requirements/${requirement.id}`, formData);
+        const response = await axios.put(`/api/v1/assignments/${assignmentId}/upload-requirements/${requirement.id}`, formData);
 
         if (response.data.success) {
           onSave();
@@ -88,7 +88,7 @@ function UploadRequirementModal({ assignmentId, requirement, currentCount, onSav
         }
       } else {
         // 创建新作业要求
-        const response = await axios.post(`/api/assignments/${assignmentId}/upload-requirements`, formData);
+        const response = await axios.post(`/api/v1/assignments/${assignmentId}/upload-requirements`, formData);
 
         if (response.data.success) {
           onSave();

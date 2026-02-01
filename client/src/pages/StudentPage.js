@@ -17,7 +17,7 @@ function StudentPage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('/api/students');
+      const response = await axios.get('/api/v1/students');
       if (response.data.success) {
         setStudents(response.data.data);
       }
@@ -28,7 +28,7 @@ function StudentPage() {
 
   const fetchAssignments = async () => {
     try {
-      const response = await axios.get('/api/assignments');
+      const response = await axios.get('/api/v1/assignments');
       if (response.data.success) {
         setAssignments(response.data.data);
       }
@@ -176,7 +176,7 @@ function StudentPage() {
                     <div className="list-group list-group-flush">
                       <div className="list-group-item d-flex align-items-center gap-3 py-3">
                         <div className="flex-fill">
-                          <div className="font-weight-medium">学生管理</div>
+                          <div className="fw-bold">学生管理</div>
                           <div className="text-muted">查看和管理学生信息</div>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -187,7 +187,7 @@ function StudentPage() {
                       </div>
                       <div className="list-group-item d-flex align-items-center gap-3 py-3">
                         <div className="flex-fill">
-                          <div className="font-weight-medium">课时信息</div>
+                          <div className="fw-bold">课时信息</div>
                           <div className="text-muted">查看进行中的课时</div>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -201,7 +201,7 @@ function StudentPage() {
                     <div className="list-group list-group-flush">
                       <div className="list-group-item d-flex align-items-center gap-3 py-3">
                         <div className="flex-fill">
-                          <div className="font-weight-medium">提交作品</div>
+                          <div className="fw-bold">提交作品</div>
                           <div className="text-muted">请前往提交页面上传作品</div>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -211,7 +211,7 @@ function StudentPage() {
                       </div>
                       <div className="list-group-item d-flex align-items-center gap-3 py-3">
                         <div className="flex-fill">
-                          <div className="font-weight-medium">查看作品</div>
+                          <div className="fw-bold">查看作品</div>
                           <div className="text-muted">请前往作品页面查看</div>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" className="icon text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">

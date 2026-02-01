@@ -33,7 +33,7 @@ function AssignmentEditPage() {
     setError(null);
 
     try {
-      const response = await axios.get(`/api/assignments/${id}`);
+      const response = await axios.get(`/api/v1/assignments/${id}`);
       if (response.data.success) {
         const assignment = response.data.data;
         setFormData({
@@ -55,7 +55,7 @@ function AssignmentEditPage() {
 
   const fetchUploadRequirements = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/assignments/${id}/upload-requirements`);
+      const response = await axios.get(`/api/v1/assignments/${id}/upload-requirements`);
       if (response.data.success) {
         setUploadRequirements(response.data.data);
       }
@@ -97,7 +97,7 @@ function AssignmentEditPage() {
     }
 
     try {
-      const response = await axios.delete(`/api/assignments/${id}/upload-requirements/${requirementId}`);
+      const response = await axios.delete(`/api/v1/assignments/${id}/upload-requirements/${requirementId}`);
       if (response.data.success) {
         setSuccess('作业要求已删除');
         fetchUploadRequirements();
@@ -129,7 +129,7 @@ function AssignmentEditPage() {
     
     // 交换 sort_order
     try {
-      await axios.put(`/api/assignments/${id}/upload-requirements/${currentReq.id}`, {
+      await axios.put(`/api/v1/assignments/${id}/upload-requirements/${currentReq.id}`, {
         name: currentReq.name,
         upload_type: currentReq.upload_type,
         is_required: currentReq.is_required,
@@ -137,7 +137,7 @@ function AssignmentEditPage() {
         sort_order: prevReq.sort_order
       });
       
-      await axios.put(`/api/assignments/${id}/upload-requirements/${prevReq.id}`, {
+      await axios.put(`/api/v1/assignments/${id}/upload-requirements/${prevReq.id}`, {
         name: prevReq.name,
         upload_type: prevReq.upload_type,
         is_required: prevReq.is_required,
@@ -161,7 +161,7 @@ function AssignmentEditPage() {
     
     // 交换 sort_order
     try {
-      await axios.put(`/api/assignments/${id}/upload-requirements/${currentReq.id}`, {
+      await axios.put(`/api/v1/assignments/${id}/upload-requirements/${currentReq.id}`, {
         name: currentReq.name,
         upload_type: currentReq.upload_type,
         is_required: currentReq.is_required,
@@ -169,7 +169,7 @@ function AssignmentEditPage() {
         sort_order: nextReq.sort_order
       });
       
-      await axios.put(`/api/assignments/${id}/upload-requirements/${nextReq.id}`, {
+      await axios.put(`/api/v1/assignments/${id}/upload-requirements/${nextReq.id}`, {
         name: nextReq.name,
         upload_type: nextReq.upload_type,
         is_required: nextReq.is_required,
@@ -196,7 +196,7 @@ function AssignmentEditPage() {
         upload_types: uploadRequirements.map(r => r.upload_type)
       };
 
-      const response = await axios.put(`/api/assignments/${id}`, payload);
+      const response = await axios.put(`/api/v1/assignments/${id}`, payload);
 
       if (response.data.success) {
         setSuccess('作业更新成功！');
