@@ -13,27 +13,26 @@ router.get('/', async (req, res) => {
     const sql = `
       SELECT
         a.*,
-      COUNT(DISTINCT s.id) as submission_count
+      (SELECT COUNT(DISTINCT s.id) FROM submissions s WHERE s.assignment_id = a.id) as submission_count
     FROM assignments a
-    LEFT JOIN submissions s ON a.id = s.assignment_id
-    GROUP BY a.id
     ORDER BY a.sort_order ASC, a.year DESC, a.created_at DESC
   `;
 
     const result = await client.query(sql);
 
-    // 解析 upload_types JSON
+    // 解析 upload_types JSON（如果还不是对象）
     const assignments = result.rows.map(row => ({
       ...row,
-      upload_types: JSON.parse(row.upload_types || '[]')
+      upload_types: typeof row.upload_types === 'object' ? row.upload_types : JSON.parse(row.upload_types || '[]')
     }));
 
     client.release();
     res.json({ success: true, data: assignments });
   } catch (error) {
-    console.error('获取作业列表失败:', error);
+    console.error('获取作业列表失败:', error.message);
+    console.error('错误堆栈:', error.stack);
     client.release();
-    res.status(500).json({ success: false, error: '获取作业列表失败' });
+    res.status(500).json({ success: false, error: '获取作业列表失败', details: error.message });
   }
 });
 
@@ -47,11 +46,9 @@ router.get('/:id', async (req, res) => {
     const result = await client.query(`
       SELECT
         a.*,
-      COUNT(DISTINCT s.id) as submission_count
+      (SELECT COUNT(DISTINCT s.id) FROM submissions s WHERE s.assignment_id = a.id) as submission_count
     FROM assignments a
-    LEFT JOIN submissions s ON a.id = s.assignment_id
     WHERE a.id = $1
-    GROUP BY a.id
   `, [id]);
 
     const row = result.rows[0];
