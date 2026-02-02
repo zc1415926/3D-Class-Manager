@@ -1,0 +1,14 @@
+[
+    {
+        "level": "SEVERE",
+        "message": "http:\/\/localhost:5175\/resources\/js\/app.js 8:26 Uncaught SyntaxError: Unexpected token '<'",
+        "source": "javascript",
+        "timestamp": 1770001011769
+    },
+    {
+        "level": "SEVERE",
+        "message": "http:\/\/localhost:8000\/favicon.ico - Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "source": "network",
+        "timestamp": 1770001026771
+    }
+]
