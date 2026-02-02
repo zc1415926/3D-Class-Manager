@@ -17,3 +17,11 @@ yarn-error.log
 /.vagrant
 .DS_Store
 Thumbs.db
+
+# Laravel specific
+/bootstrap/cache/*
+/bootstrap/cache/.gitignore
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
